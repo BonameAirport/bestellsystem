@@ -119,6 +119,7 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
   <div class="tab on" id="tab-overview" onclick="showTab('overview')">📊 Übersicht</div>
   <div class="tab" id="tab-orders" onclick="showTab('orders')">📋 Bestellungen</div>
   <div class="tab" id="tab-articles" onclick="showTab('articles')">📦 Artikel</div>
+  <div class="tab" id="tab-users" onclick="showTab('users')">👥 Benutzer</div>
 </div>
 
 <!-- OVERVIEW -->
@@ -260,12 +261,13 @@ function doLogout(){
 
 // ─── TABS ─────────────────────────────────────────────────
 function showTab(tab){
-  ['overview','orders','articles'].forEach(t=>{
+  ['overview','orders','articles','users'].forEach(t=>{
     document.getElementById('page-'+t).style.display=t===tab?'block':'none';
     document.getElementById('tab-'+t).classList.toggle('on',t===tab);
   });
   if(tab==='orders') renderOrders();
   if(tab==='articles') renderArticles();
+  if(tab==='users') loadUsers();
 }
 
 // ─── LOAD ALL ─────────────────────────────────────────────
@@ -654,6 +656,93 @@ function calcDeliveryTimes(doneOrders){
   document.getElementById('del-max').textContent=max+' Min';
   document.getElementById('del-count').textContent=doneOrders.length+' Bestellungen';
 }
+
+// ─── USER MANAGEMENT ─────────────────────────────────────
+const OWNER_ID="dbeecae7-3b37-4c66-91fd-820fe6e55ac1";
+
+async function loadUsers(){
+  const el=document.getElementById('users-list');
+  if(!el) return;
+  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">⏳ Lädt...</div>';
+  const roles=await api("GET","user_roles","?order=created_at.asc");
+  if(!roles||!roles.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Keine Benutzer</div>';return;}
+  const visible=roles.filter(u=>u.user_id!==OWNER_ID);
+  el.innerHTML=visible.map(u=>{
+    const roleLabel={admin:'⚙️ Admin',besteller:'🛒 Besteller',lager:'📦 Lager'}[u.role]||u.role;
+    const roleColor={admin:'#7c3aed',besteller:'#2563eb',lager:'#16a34a'}[u.role]||'#64748b';
+    return `<div style="background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #334155;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#f1f5f9;">${u.email||u.user_id.substring(0,12)+'...'}</div>
+          <div style="font-size:11px;color:#64748b;">Seit ${new Date(u.created_at).toLocaleDateString('de-DE')}</div>
+        </div>
+        <span style="background:${roleColor}22;color:${roleColor};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">${roleLabel}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select onchange="changeRole('${u.id}',this.value)" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">
+          <option value="besteller" ${u.role==='besteller'?'selected':''}>🛒 Besteller</option>
+          <option value="lager" ${u.role==='lager'?'selected':''}>📦 Lager</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
+        </select>
+        <button onclick="removeUser('${u.id}','${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function changeRole(roleId, newRole){
+  await api("PATCH","user_roles","?id=eq."+roleId,{role:newRole});
+  loadUsers();
+}
+
+async function removeUser(roleId, userId){
+  if(!confirm('Mitarbeiter entfernen?')) return;
+  await api("DELETE","user_roles","?id=eq."+roleId);
+  loadUsers();
+}
+
+async function inviteUser(){
+  const email=document.getElementById('invite-email').value.trim();
+  const pw=document.getElementById('invite-pw').value;
+  const role=document.getElementById('invite-role').value;
+  if(!email||!pw){alert('Bitte Email und Passwort eingeben.');return;}
+  try{
+    const token=localStorage.getItem('dash_token');
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/admin/users',{
+      method:'POST',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw,email_confirm:true})
+    });
+    const data=await r.json();
+    if(data.id){
+      await api("POST","user_roles","",{user_id:data.id,role});
+      document.getElementById('invite-email').value='';
+      document.getElementById('invite-pw').value='';
+      alert('✅ Mitarbeiter hinzugefügt!');
+      loadUsers();
+    } else {
+      alert('❌ Fehler: '+JSON.stringify(data));
+    }
+  }catch(e){alert('❌ Fehler: '+e.message);}
+}
 </script>
+
+<!-- USERS -->
+<div id="page-users" style="display:none;">
+  <div class="wrap">
+    <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #334155;">
+      <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:10px;">➕ Mitarbeiter hinzufügen</div>
+      <input type="email" id="invite-email" placeholder="Email Adresse" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
+      <input type="password" id="invite-pw" placeholder="Passwort" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
+      <select id="invite-role" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
+        <option value="besteller">🛒 Besteller</option>
+        <option value="lager">📦 Lager</option>
+        <option value="admin">⚙️ Admin</option>
+      </select>
+      <button onclick="inviteUser()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Hinzufügen</button>
+    </div>
+    <div id="users-list"></div>
+  </div>
+</div>
 </body>
 </html>
