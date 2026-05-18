@@ -318,6 +318,8 @@ function renderArticles(){
           <div class="art-name">${a.name}</div>
           <div class="art-unit">${a.unit}</div>
         </div>
+        <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
+        <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
       </div>`).join('')}
     </div>`).join('');
 }
@@ -519,6 +521,33 @@ function populateSectionSelect(){
     const wrap=document.getElementById('new-cat-wrap-dash');
     if(wrap) wrap.style.display=this.value==='__new__'?'block':'none';
   };
+}
+
+function searchArticlesDash(q){
+  if(!q){ renderArticles(); return; }
+  const ql=q.toLowerCase();
+  const el=document.getElementById('articles-list');
+  const filtered=allArticles.filter(a=>
+    a.name.toLowerCase().includes(ql)||
+    (a.section&&a.section.toLowerCase().includes(ql))
+  );
+  if(!filtered.length){el.innerHTML='<div class="empty">Nicht gefunden</div>';return;}
+  const sections={};
+  filtered.forEach(a=>{
+    const key=a.type+'::'+a.section;
+    if(!sections[key]) sections[key]={type:a.type,section:a.section,items:[]};
+    sections[key].items.push(a);
+  });
+  el.innerHTML=Object.values(sections).map(s=>`
+    <div class="art-section">
+      <div class="art-section-head">${s.section} <span style="font-size:10px;opacity:0.7;">${s.type}</span></div>
+      ${s.items.map(a=>`<div class="art-row">
+        ${a.image_url?`<img class="art-img" src="${a.image_url}">`:'<div class="art-ph">🖼️</div>'}
+        <div style="flex:1;min-width:0;"><div class="art-name">${a.name}</div><div class="art-unit">${a.unit}</div></div>
+        <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
+        <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
+      </div>`).join('')}
+    </div>`).join('');
 }
 </script>
 </body>
