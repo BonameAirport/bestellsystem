@@ -402,7 +402,7 @@ const H={"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"applic
 const TYPE="airside_lager";
 const PIN="2802";
 const SESSION_HOURS=8;
-const RATE_LIMIT=10;
+const RATE_LIMIT=40;
 let contacts=[],selPhones=[],cart={},articles=[],allOrders=[],statFilter="week",isAdmin=false,categories=[];
 let loginAttempts=parseInt(localStorage.getItem('login_attempts')||'0');
 let lockUntil=parseInt(localStorage.getItem('lock_until')||'0');
