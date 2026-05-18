@@ -142,21 +142,25 @@ async function doRegister(){
   if(pw.length<6){err.style.display='block';err.textContent='❌ Passwort mind. 6 Zeichen.';return;}
   
   try{
-    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/signup',{
+    const SB='https://xltsjtbbbykftmjkhcjm.supabase.co';
+    const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss';
+    
+    // Step 1: Register user
+    const r=await fetch(SB+'/auth/v1/signup',{
       method:'POST',
-      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'},
+      headers:{'apikey':KEY,'Content-Type':'application/json'},
       body:JSON.stringify({email,password:pw,data:{full_name:name}})
     });
     const data=await r.json();
-    // Handle different Supabase response structures
-    const userId = data?.user?.id || data?.id || data?.session?.user?.id;
+    
+    // Get user ID from any possible location in response
+    const userId=data?.user?.id||data?.session?.user?.id||data?.id;
+    
     if(userId){
-      // Write to pending_users table
-      const SB_URL2='https://xltsjtbbbykftmjkhcjm.supabase.co';
-      const SB_KEY2='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss';
-      await fetch(SB_URL2+'/rest/v1/pending_users',{
+      // Step 2: Write to pending_users
+      await fetch(SB+'/rest/v1/pending_users',{
         method:'POST',
-        headers:{'apikey':SB_KEY2,'Content-Type':'application/json','Prefer':'return=minimal'},
+        headers:{'apikey':KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
         body:JSON.stringify({user_id:userId,email,full_name:name})
       });
       document.getElementById('reg-email').style.display='none';
