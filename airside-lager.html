@@ -1783,17 +1783,6 @@ async function archiveOrders(days){
 </div>
 </body></html>";
   const w = window.open("","_blank");
-  if(w){ w.document.write(html); w.document.close(); w.print(); }
-  
-  // Delete orders
-  const ids = orders.map(o=>o.id);
-  for(const id of ids){
-    await api("DELETE","orders",`?id=eq.${id}`);
-  }
-  
-  closeArchiveModal();
-  alert(`✅ ${orders.length} Bestellungen exportiert und gelöscht!`);
-}
 
 <script>
 // ─── MITARBEITER MODAL ───────────────────────────────────
