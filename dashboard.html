@@ -77,6 +77,7 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .status-label{font-size:13px;font-weight:700;color:#f1f5f9;}
 .status-sub{font-size:11px;color:#64748b;margin-top:2px;}
 
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}.status-dot.checking{background:#f59e0b;animation:blink 1s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -114,6 +115,13 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 <!-- OVERVIEW -->
 <div id="page-overview">
   
+  <div class="status-grid">
+    <div class="status-card"><div class="status-dot checking" id="status-dot-db"></div><div><div class="status-label">Supabase DB</div><div class="status-sub" id="status-text-db">Prüfe...</div></div></div>
+    <div class="status-card"><div class="status-dot checking" id="status-dot-netlify"></div><div><div class="status-label">Netlify</div><div class="status-sub" id="status-text-netlify">Prüfe...</div></div></div>
+    <div class="status-card"><div class="status-dot checking" id="status-dot-orders"></div><div><div class="status-label">Bestellungen</div><div class="status-sub" id="status-text-orders">Prüfe...</div></div></div>
+    <div class="status-card"><div class="status-dot checking" id="status-dot-articles"></div><div><div class="status-label">Artikel</div><div class="status-sub" id="status-text-articles">Prüfe...</div></div></div>
+  </div>
+
 <div class="stats-grid" id="stats-grid">
     <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
     <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
@@ -450,6 +458,68 @@ function checkOpenOrders(){
 
 setTimeout(checkOpenOrders,10000);
 setInterval(checkOpenOrders,5*60*1000);
+
+// ─── ARTICLE MANAGEMENT ──────────────────────────────────
+async function addArticleDash(){
+  const name=document.getElementById('new-art-name').value.trim();
+  const unit=document.getElementById('new-art-unit').value.trim();
+  const type=document.getElementById('new-art-type').value;
+  let section=document.getElementById('new-art-section').value;
+  if(section==='__new__'){
+    section=document.getElementById('new-cat-input-dash').value.trim();
+    if(!section){alert('Bitte Kategorie eingeben.');return;}
+  }
+  if(!name||!unit||!type||!section){alert('Bitte alle Felder ausfüllen.');return;}
+  const r=await api("POST","articles","",{type,name,name_en:name,name_tr:name,unit,section});
+  if(r&&r[0]){
+    allArticles.push(r[0]);
+    document.getElementById('new-art-name').value='';
+    document.getElementById('new-art-unit').value='';
+    renderArticles();
+    alert('✅ Artikel hinzugefügt!');
+  }
+}
+
+async function deleteArticleDash(id,name){
+  if(!confirm('"'+name+'" löschen?')) return;
+  await api("DELETE","articles","?id=eq."+id);
+  allArticles=allArticles.filter(a=>a.id!==id);
+  renderArticles();
+}
+
+async function uploadImgDash(input,id){
+  const file=input.files[0]; if(!file) return;
+  const path="dash_"+id+"_"+Date.now()+"."+file.name.split('.').pop();
+  const token=localStorage.getItem('dash_token');
+  const r=await fetch("https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/artikel-bilder/"+path,{
+    method:'POST',
+    headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':file.type},
+    body:file
+  });
+  if(r.ok){
+    const url="https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/public/artikel-bilder/"+path;
+    await api("PATCH","articles","?id=eq."+id,{image_url:url});
+    const a=allArticles.find(x=>x.id===id);
+    if(a) a.image_url=url;
+    renderArticles();
+    alert('✅ Bild hochgeladen!');
+  }
+}
+
+function populateSectionSelect(){
+  const typeEl=document.getElementById('new-art-type');
+  const secEl=document.getElementById('new-art-section');
+  if(!typeEl||!secEl) return;
+  const type=typeEl.value;
+  const cats=[...new Set(allArticles.filter(a=>a.type===type).map(a=>a.section).filter(Boolean))].sort();
+  secEl.innerHTML='<option value="">-- Kategorie wählen --</option>';
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;secEl.appendChild(o);});
+  const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='➕ Neue Kategorie';secEl.appendChild(newOpt);
+  secEl.onchange=function(){
+    const wrap=document.getElementById('new-cat-wrap-dash');
+    if(wrap) wrap.style.display=this.value==='__new__'?'block':'none';
+  };
+}
 </script>
 </body>
 </html>
