@@ -458,10 +458,7 @@ function checkRateLimit(){
 // ─── SUPABASE ────────────────────────────────────────────
 async function api(method,table,query="",body=null){
   try{
-    const token=localStorage.getItem('sb_token');
-    const headers={...H};
-    if(token) headers['Authorization']='Bearer '+token;
-    const o={method,headers};
+    const o={method,headers:{...H}};
     if(body) o.body=JSON.stringify(body);
     if(method==="POST") o.headers["Prefer"]="return=representation";
     const r=await fetch(`${SB_URL}/rest/v1/${table}${query}`,o);
