@@ -691,6 +691,7 @@ async function loadUsers(){
           <option value="lager" ${u.role==='lager'?'selected':''}>📦 Lager</option>
           <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
         </select>
+        <button onclick="resetPassword('${u.email}')" style="background:#fef3c7;color:#b45309;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔑</button>
         <button onclick="removeUser('${u.id}','${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
       </div>
     </div>`;
@@ -729,6 +730,23 @@ async function inviteUser(){
       loadUsers();
     } else {
       alert('❌ Fehler: '+JSON.stringify(data));
+    }
+  }catch(e){alert('❌ Fehler: '+e.message);}
+}
+
+async function resetPassword(email){
+  if(!email){alert('Email nicht verfügbar.');return;}
+  if(!confirm('Passwort-Reset Email an '+email+' senden?')) return;
+  try{
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/recover',{
+      method:'POST',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'},
+      body:JSON.stringify({email,redirect_to:'https://airport-dus-boname.netlify.app/login.html'})
+    });
+    if(r.ok){
+      alert('✅ Reset-Email wurde gesendet an '+email);
+    } else {
+      alert('❌ Fehler beim Senden');
     }
   }catch(e){alert('❌ Fehler: '+e.message);}
 }

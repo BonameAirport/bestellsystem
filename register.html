@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Registrierung – bona'me</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;border:1px solid #334155;}
+.logo{text-align:center;margin-bottom:24px;}
+.logo h1{font-size:22px;font-weight:800;color:#f1f5f9;}
+.logo p{font-size:13px;color:#64748b;margin-top:4px;}
+.input{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;}
+.input:focus{border-color:#7c3aed;}
+.btn{width:100%;background:#7c3aed;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+.err{display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;}
+.success{display:none;text-align:center;padding:20px;}
+.success h2{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:8px;}
+.success p{font-size:13px;color:#64748b;}
+.divider{display:flex;align-items:center;gap:10px;margin:20px 0;}
+.divider hr{flex:1;border:none;border-top:1px solid #334155;}
+.divider span{font-size:12px;color:#64748b;}
+.qr-section{text-align:center;}
+.qr-section p{font-size:12px;color:#64748b;margin-bottom:10px;}
+#qr-code{margin:0 auto;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">
+    <h1>bona'me × Lagardère</h1>
+    <p>Mitarbeiter Registrierung</p>
+  </div>
+
+  <div id="form-section">
+    <input type="email" id="reg-email" class="input" placeholder="Email Adresse" autocomplete="email"/>
+    <input type="password" id="reg-pw" class="input" placeholder="Passwort wählen" autocomplete="new-password"/>
+    <input type="password" id="reg-pw2" class="input" placeholder="Passwort wiederholen"/>
+    <button class="btn" onclick="doRegister()">✅ Registrieren</button>
+    <div class="err" id="reg-err"></div>
+  </div>
+
+  <div class="success" id="success-section">
+    <div style="font-size:48px;margin-bottom:16px;">✅</div>
+    <h2>Erfolgreich registriert!</h2>
+    <p>Dein Konto wurde erstellt. Bitte warte bis ein Administrator dich freischaltet.</p>
+    <p style="margin-top:12px;color:#7c3aed;font-weight:700;">Du wirst benachrichtigt wenn du Zugriff hast.</p>
+  </div>
+
+  <div class="divider"><hr/><span>QR Code teilen</span><hr/></div>
+  <div class="qr-section">
+    <p>Scanne diesen Code um dich zu registrieren</p>
+    <div id="qr-code"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const SB_URL="https://xltsjtbbbykftmjkhcjm.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+const REGISTER_URL="https://airport-dus-boname.netlify.app/register.html";
+
+// Generate QR Code
+new QRCode(document.getElementById("qr-code"),{
+  text:REGISTER_URL,
+  width:180,
+  height:180,
+  colorDark:"#7c3aed",
+  colorLight:"#1e293b",
+  correctLevel:QRCode.CorrectLevel.H
+});
+
+async function doRegister(){
+  const email=document.getElementById('reg-email').value.trim();
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  const err=document.getElementById('reg-err');
+
+  if(!email||!pw){err.style.display='block';err.textContent='❌ Bitte alle Felder ausfüllen.';return;}
+  if(pw!==pw2){err.style.display='block';err.textContent='❌ Passwörter stimmen nicht überein.';return;}
+  if(pw.length<6){err.style.display='block';err.textContent='❌ Passwort muss mindestens 6 Zeichen haben.';return;}
+
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/signup`,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw})
+    });
+    const data=await r.json();
+    if(data.user||data.id){
+      document.getElementById('form-section').style.display='none';
+      document.getElementById('success-section').style.display='block';
+    } else {
+      err.style.display='block';
+      err.textContent='❌ '+(data.msg||data.message||'Fehler bei der Registrierung');
+    }
+  }catch(e){
+    err.style.display='block';
+    err.textContent='❌ Verbindungsfehler';
+  }
+}
+</script>
+</body>
+</html>
