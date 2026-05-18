@@ -67,6 +67,16 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .live-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 .empty{text-align:center;padding:40px 20px;color:#64748b;}
+
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}
+.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}
+.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}
+.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}
+.status-dot.checking{background:#f59e0b;animation:pulse 1s infinite;}
+.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}
+.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
+
 </style>
 </head>
 <body>
@@ -103,7 +113,39 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 
 <!-- OVERVIEW -->
 <div id="page-overview">
-  <div class="stats-grid" id="stats-grid">
+  
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-db"></div>
+      <div>
+        <div class="status-label">Supabase DB</div>
+        <div class="status-sub" id="status-text-db">Prüfe...</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-netlify"></div>
+      <div>
+        <div class="status-label">Netlify</div>
+        <div class="status-sub" id="status-text-netlify">Prüfe...</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-orders"></div>
+      <div>
+        <div class="status-label">Bestellungen</div>
+        <div class="status-sub" id="status-text-orders">Prüfe...</div>
+      </div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-articles"></div>
+      <div>
+        <div class="status-label">Artikel</div>
+        <div class="status-sub" id="status-text-articles">Prüfe...</div>
+      </div>
+    </div>
+  </div>
+
+<div class="stats-grid" id="stats-grid">
     <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
     <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
     <div class="stat-card"><div class="stat-num stat-blue" id="stat-today">-</div><div class="stat-label">Heute gesamt</div></div>
@@ -318,6 +360,8 @@ setInterval(loadAll, 30000);
 // Run initial checks
 setTimeout(checkAlerts, 5000);
 setTimeout(checkSupabase, 3000);
+setTimeout(checkStatus, 1000);
+setInterval(checkStatus, 120000);
 
 // ─── ALERTS & MONITORING ─────────────────────────────────
 const OWNER_PHONE = "491743822643";
@@ -367,6 +411,46 @@ function showAlert(msg, type){
 // Run checks every 5 minutes
 setInterval(checkAlerts, 5 * 60 * 1000);
 setInterval(checkSupabase, 5 * 60 * 1000);
+
+// ─── STATUS CHECK ────────────────────────────────────────
+async function checkStatus(){
+  const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  
+  // Check DB
+  setStatus('db','checking','Prüfe...');
+  const orders = await api("GET","orders","?limit=1");
+  if(orders!==null){
+    setStatus('db','green',`Online · ${now}`);
+  } else {
+    setStatus('db','red','❌ Nicht erreichbar!');
+  }
+
+  // Check orders table
+  const ordersCount = await api("GET","orders","?select=id");
+  if(ordersCount!==null){
+    setStatus('orders','green',`${ordersCount.length} Bestellungen`);
+  } else {
+    setStatus('orders','red','❌ Fehler!');
+  }
+
+  // Check articles table
+  const articlesCount = await api("GET","articles","?select=id");
+  if(articlesCount!==null){
+    setStatus('articles','green',`${articlesCount.length} Artikel`);
+  } else {
+    setStatus('articles','red','❌ Fehler!');
+  }
+
+  // Netlify - just check if page loaded
+  setStatus('netlify','green',`Online · ${now}`);
+}
+
+function setStatus(name, state, text){
+  const dot = document.getElementById('status-dot-'+name);
+  const label = document.getElementById('status-text-'+name);
+  if(dot){ dot.className='status-dot '+state; }
+  if(label){ label.textContent=text; }
+}
 </script>
 </body>
 </html>
