@@ -315,6 +315,58 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 // Auto refresh every 30 seconds
 setInterval(loadAll, 30000);
+// Run initial checks
+setTimeout(checkAlerts, 5000);
+setTimeout(checkSupabase, 3000);
+
+// ─── ALERTS & MONITORING ─────────────────────────────────
+const OWNER_PHONE = "491743822643";
+let alertedOrders = new Set();
+let supabaseAlerted = false;
+
+function checkAlerts(){
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+  
+  // Check for orders open longer than 1 hour
+  allOrders.forEach(o=>{
+    if(['angekommen','fehler'].includes(o.status)) return;
+    if(alertedOrders.has(o.id)) return;
+    const created = new Date(o.created_at).getTime();
+    if(now - created > oneHour){
+      alertedOrders.add(o.id);
+      const msg = `⚠️ *OFFENE BESTELLUNG SEIT 1 STUNDE*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${o.date}\n📦 ${o.type}\n\nBitte prüfen!`;
+      window.open(`https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(msg)}`,'_blank');
+      showAlert(`⚠️ Bestellung von ${o.orderer} seit über 1 Stunde offen!`,'orange');
+    }
+  });
+}
+
+function checkSupabase(){
+  api("GET","orders","?limit=1").then(data=>{
+    if(data===null && !supabaseAlerted){
+      supabaseAlerted = true;
+      const msg = `🔴 *SYSTEM FEHLER*\n━━━━━━━━━━━━━━━━━━━━\nSupabase ist nicht erreichbar!\nBitte sofort prüfen.`;
+      window.open(`https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(msg)}`,'_blank');
+      showAlert('🔴 Supabase nicht erreichbar!','red');
+    } else if(data !== null){
+      supabaseAlerted = false;
+    }
+  });
+}
+
+function showAlert(msg, type){
+  const colors = {red:'#dc2626', orange:'#f59e0b', green:'#16a34a'};
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;top:0;left:0;right:0;background:${colors[type]||colors.orange};color:white;padding:12px 16px;font-size:13px;font-weight:700;z-index:500;text-align:center;`;
+  el.textContent = msg;
+  document.body.prepend(el);
+  setTimeout(()=>el.remove(), 10000);
+}
+
+// Run checks every 5 minutes
+setInterval(checkAlerts, 5 * 60 * 1000);
+setInterval(checkSupabase, 5 * 60 * 1000);
 </script>
 </body>
 </html>
