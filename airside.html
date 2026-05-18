@@ -234,7 +234,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
   <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
-  <button onclick="openMitarbeiterModal()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">👥 Mitarbeiter</button>
+  <button onclick="showMitarbeiterPage()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">👥 Mitarbeiter</button>
 </div>
 
 <div class="tabs">
@@ -1133,6 +1133,39 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
     <div id="users-list-app"></div>
   </div>
 </div>
+
+<!-- MITARBEITER PAGE -->
+<div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#f1f5f9;z-index:100;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);padding:16px 20px;position:sticky;top:0;z-index:101;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="hideMitarbeiterPage()" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;width:36px;height:36px;color:white;font-size:20px;cursor:pointer;">&#8592;</button>
+      <div>
+        <div style="font-size:17px;font-weight:800;color:white;">&#128101; Mitarbeiter</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);" id="mit-count">Laedt...</div>
+      </div>
+      <button onclick="loadMitarbeiterPage()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">&#8635;</button>
+    </div>
+  </div>
+  <div style="padding:14px;max-width:500px;margin:0 auto;">
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Wartend auf Freischaltung</div>
+    <div id="mit-pending"></div>
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Aktive Mitarbeiter</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:8px;text-align:center;">Admin</div>
+        <div id="mit-admins"></div>
+      </div>
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#2563eb;margin-bottom:8px;text-align:center;">Besteller</div>
+        <div id="mit-besteller"></div>
+      </div>
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#16a34a;margin-bottom:8px;text-align:center;">Lager</div>
+        <div id="mit-lager"></div>
+      </div>
+    </div>
+  </div>
+</div>
 </body></html>`;
   const w=window.open('','_blank'); w.document.write(html); w.document.close();
 }
@@ -1694,6 +1727,80 @@ async function loadAppData(){
   const a=await api('GET','articles','?type=eq.'+TYPE+'&order=section.asc,name.asc');
   if(a&&a.length>0){articles=a;renderArticles();}
 }
+
+function showMitarbeiterPage(){
+  document.getElementById('mitarbeiter-page').style.display='block';
+  loadMitarbeiterPage();
+}
+function hideMitarbeiterPage(){
+  document.getElementById('mitarbeiter-page').style.display='none';
+}
+async function loadMitarbeiterPage(){
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  const [pending,roles]=await Promise.all([
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers}).then(r=>r.json()).catch(()=>[]),
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=created_at.asc',{headers}).then(r=>r.json()).catch(()=>[])
+  ]);
+  const assignedIds=new Set((roles||[]).map(r=>r.user_id));
+  const pf=(pending||[]).filter(u=>!assignedIds.has(u.user_id));
+  const total=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1').length;
+  document.getElementById('mit-count').textContent=total+' aktiv, '+pf.length+' wartend';
+  const pendingEl=document.getElementById('mit-pending');
+  if(!pf.length){
+    pendingEl.innerHTML='<div style="font-size:13px;color:#94a3b8;padding:8px 0 16px;">Keine ausstehenden Registrierungen</div>';
+  } else {
+    pendingEl.innerHTML=pf.map(u=>'<div style="background:white;border:1.5px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:8px;"><div style="font-size:13px;font-weight:700;color:#0f172a;">'+(u.full_name||u.email)+'</div><div style="font-size:11px;color:#64748b;margin-bottom:8px;">'+u.email+'</div><div style="display:flex;gap:6px;"><select id="mit-role-'+u.user_id+'" style="flex:1;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px;font-size:12px;font-family:inherit;outline:none;"><option value="besteller">Besteller</option><option value="lager">Lager</option><option value="admin">Admin</option></select><button onclick="mitApprove(\''+u.user_id+'\',\''+u.email+'\',\''+( u.full_name||u.email)+'\')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">OK</button><button onclick="mitDeny(\''+u.user_id+'\')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;">X</button></div></div>').join('');
+  }
+  const visible=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1');
+  const renderUser=u=>'<div style="border-bottom:1px solid #f1f5f9;padding:6px 0;"><div style="font-size:11px;font-weight:700;color:#0f172a;">'+(u.full_name||u.email||u.user_id.substring(0,8))+'</div><div style="display:flex;gap:3px;margin-top:3px;"><button onclick="mitEdit(\''+u.id+'\',\''+( u.full_name||'')+'\')" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;">Edit</button><button onclick="mitChangeRole(\''+u.id+'\',\''+u.role+'\')" style="background:#f1f5f9;color:#475569;border:none;border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;">Rolle</button><button onclick="mitRemove(\''+u.id+'\',\''+( u.full_name||u.email||'')+'\')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;">X</button></div></div>';
+  document.getElementById('mit-admins').innerHTML=visible.filter(u=>u.role==='admin').map(renderUser).join('')||'<div style="font-size:11px;color:#94a3b8;">-</div>';
+  document.getElementById('mit-besteller').innerHTML=visible.filter(u=>u.role==='besteller').map(renderUser).join('')||'<div style="font-size:11px;color:#94a3b8;">-</div>';
+  document.getElementById('mit-lager').innerHTML=visible.filter(u=>u.role==='lager').map(renderUser).join('')||'<div style="font-size:11px;color:#94a3b8;">-</div>';
+}
+async function mitApprove(userId,email,name){
+  const role=document.getElementById('mit-role-'+userId)?.value||'besteller';
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers,body:JSON.stringify({user_id:userId,role,full_name:name,email})});
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
+  if(role==='lager'){
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers,body:JSON.stringify({type:'lager',name,phone:'',user_id:userId})});
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers,body:JSON.stringify({type:'airside_lager',name,phone:'',user_id:userId})});
+  }
+  alert(name+' freigeschaltet als '+role+'!');
+  loadMitarbeiterPage();
+}
+async function mitDeny(userId){
+  if(!confirm('Ablehnen?')) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
+  loadMitarbeiterPage();
+}
+async function mitChangeRole(roleId,currentRole){
+  const newRole=prompt('Neue Rolle (besteller/lager/admin):',currentRole);
+  if(!newRole||!['besteller','lager','admin'].includes(newRole)) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({role:newRole})});
+  loadMitarbeiterPage();
+}
+async function mitEdit(roleId,currentName){
+  const newName=prompt('Name aendern:',currentName);
+  if(newName===null) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({full_name:newName})});
+  loadMitarbeiterPage();
+}
+async function mitRemove(roleId,name){
+  if(!confirm(name+' entfernen?')) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'DELETE',headers});
+  loadMitarbeiterPage();
+}
 </script>
 
 <!-- OH ADMIN MODAL -->
@@ -1750,6 +1857,39 @@ async function loadAppData(){
     
     <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
     <div id="users-list-app"></div>
+  </div>
+</div>
+
+<!-- MITARBEITER PAGE -->
+<div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#f1f5f9;z-index:100;overflow-y:auto;">
+  <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);padding:16px 20px;position:sticky;top:0;z-index:101;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button onclick="hideMitarbeiterPage()" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;width:36px;height:36px;color:white;font-size:20px;cursor:pointer;">&#8592;</button>
+      <div>
+        <div style="font-size:17px;font-weight:800;color:white;">&#128101; Mitarbeiter</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);" id="mit-count">Laedt...</div>
+      </div>
+      <button onclick="loadMitarbeiterPage()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">&#8635;</button>
+    </div>
+  </div>
+  <div style="padding:14px;max-width:500px;margin:0 auto;">
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Wartend auf Freischaltung</div>
+    <div id="mit-pending"></div>
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Aktive Mitarbeiter</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:8px;text-align:center;">Admin</div>
+        <div id="mit-admins"></div>
+      </div>
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#2563eb;margin-bottom:8px;text-align:center;">Besteller</div>
+        <div id="mit-besteller"></div>
+      </div>
+      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
+        <div style="font-size:11px;font-weight:800;color:#16a34a;margin-bottom:8px;text-align:center;">Lager</div>
+        <div id="mit-lager"></div>
+      </div>
+    </div>
   </div>
 </div>
 </body>
