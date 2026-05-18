@@ -1703,6 +1703,22 @@ async function appRemoveUser(roleId){
   await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'DELETE',headers});
   loadMitarbeiter();
 }
+
+async function loadAppData(){
+  document.getElementById('login-screen').style.display='none';
+  const n=getCookie('uname')||localStorage.getItem('uname');
+  if(n) document.getElementById('oname').value=n;
+  if(localStorage.getItem('is_admin')==='1'){
+    isAdmin=true;
+    const tb=document.getElementById('admin-toolbar');
+    if(tb) tb.style.display='flex';
+  }
+  loadOpeningHours();
+  const ct=await api('GET','contacts','?type=eq.'+TYPE+'&order=created_at.asc');
+  if(ct){contacts=ct;renderContacts();}
+  const a=await api('GET','articles','?type=eq.'+TYPE+'&order=section.asc,name.asc');
+  if(a&&a.length>0){articles=a;renderArticles();}
+}
 </script>
 
 <!-- OH ADMIN MODAL -->
