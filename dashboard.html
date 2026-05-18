@@ -77,6 +77,13 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .status-label{font-size:13px;font-weight:700;color:#f1f5f9;}
 .status-sub{font-size:11px;color:#64748b;margin-top:2px;}
 
+
+.art-mgmt-form{background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #e2e8f0;}
+.art-mgmt-form input,.art-mgmt-form select{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px;font-size:14px;font-family:inherit;margin-bottom:8px;outline:none;background:white;color:#0f172a;}
+.art-mgmt-form button{width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;}
+.art-del-btn{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.art-img-label{background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
+
 </style>
 </head>
 <body>
@@ -114,37 +121,6 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 <!-- OVERVIEW -->
 <div id="page-overview">
   
-  <div class="status-grid">
-    <div class="status-card">
-      <div class="status-dot checking" id="status-dot-db"></div>
-      <div>
-        <div class="status-label">Supabase DB</div>
-        <div class="status-sub" id="status-text-db">Prüfe...</div>
-      </div>
-    </div>
-    <div class="status-card">
-      <div class="status-dot checking" id="status-dot-netlify"></div>
-      <div>
-        <div class="status-label">Netlify</div>
-        <div class="status-sub" id="status-text-netlify">Prüfe...</div>
-      </div>
-    </div>
-    <div class="status-card">
-      <div class="status-dot checking" id="status-dot-orders"></div>
-      <div>
-        <div class="status-label">Bestellungen</div>
-        <div class="status-sub" id="status-text-orders">Prüfe...</div>
-      </div>
-    </div>
-    <div class="status-card">
-      <div class="status-dot checking" id="status-dot-articles"></div>
-      <div>
-        <div class="status-label">Artikel</div>
-        <div class="status-sub" id="status-text-articles">Prüfe...</div>
-      </div>
-    </div>
-  </div>
-
 <div class="stats-grid" id="stats-grid">
     <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
     <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
@@ -174,7 +150,28 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
     <button class="filter-btn" id="fa-airside" onclick="setArticleFilter('airside')">✈️ Airside</button>
     <button class="filter-btn" id="fa-al" onclick="setArticleFilter('airside_lager')">🔄 Airside→Lager</button>
   </div>
-  <div class="wrap" id="articles-list"></div>
+  <div class="wrap">
+    <!-- ADD FORM -->
+    <div class="art-mgmt-form">
+      <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:10px;">➕ Neuen Artikel hinzufügen</div>
+      <input type="text" id="new-art-name" placeholder="Artikelname"/>
+      <input type="text" id="new-art-unit" placeholder="Einheit (z.B. 1 KG, 6x2KG)"/>
+      <select id="new-art-type">
+        <option value="">-- Seite wählen --</option>
+        <option value="lager">📦 Landside → Lager</option>
+        <option value="airside">✈️ Landside → Airside</option>
+        <option value="airside_lager">🔄 Airside → Lager</option>
+      </select>
+      <select id="new-art-section">
+        <option value="">-- Kategorie wählen --</option>
+      </select>
+      <div id="new-cat-wrap-dash" style="display:none;">
+        <input type="text" id="new-cat-input-dash" placeholder="z.B. 🥗 Salate"/>
+      </div>
+      <button onclick="addArticleDash()">✅ Artikel hinzufügen</button>
+    </div>
+    <div id="articles-list"></div>
+  </div>
 </div>
 
 <script>
@@ -341,8 +338,11 @@ function renderArticles(){
           <div class="art-name">${a.name}</div>
           <div class="art-unit">${a.unit}</div>
         </div>
+        <label class="art-img-label">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
+        <button class="art-del-btn" onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}">🗑</button>
       </div>`).join('')}
     </div>`).join('');
+  populateSectionSelect();
 }
 
 // ─── STARTUP ─────────────────────────────────────────────
@@ -358,8 +358,8 @@ window.addEventListener('DOMContentLoaded',()=>{
 // Auto refresh every 30 seconds
 setInterval(loadAll, 30000);
 // Run initial checks
-setTimeout(checkAlerts, 5000);
-setTimeout(checkSupabase, 3000);
+setTimeout(checkAlerts, 30000);
+setTimeout(checkSupabase, 15000);
 setTimeout(checkStatus, 1000);
 setInterval(checkStatus, 120000);
 
@@ -451,6 +451,76 @@ function setStatus(name, state, text){
   if(dot){ dot.className='status-dot '+state; }
   if(label){ label.textContent=text; }
 }
+
+// ─── ARTICLE MANAGEMENT ──────────────────────────────────
+async function addArticleDash(){
+  const name=document.getElementById('new-art-name').value.trim();
+  const unit=document.getElementById('new-art-unit').value.trim();
+  const type=document.getElementById('new-art-type').value;
+  let section=document.getElementById('new-art-section').value;
+  
+  if(section==='__new__'){
+    section=document.getElementById('new-cat-input-dash').value.trim();
+    if(!section){alert('Bitte Kategorie eingeben.');return;}
+  }
+  
+  if(!name||!unit||!type||!section){alert('Bitte alle Felder ausfüllen.');return;}
+  
+  const r=await api("POST","articles","",{type,name,name_en:name,name_tr:name,unit,section});
+  if(r&&r[0]){
+    allArticles.push(r[0]);
+    document.getElementById('new-art-name').value='';
+    document.getElementById('new-art-unit').value='';
+    renderArticles();
+    alert('✅ Artikel hinzugefügt!');
+  }
+}
+
+async function deleteArticleDash(id,name){
+  if(!confirm(`"${name}" löschen?`)) return;
+  await api("DELETE","articles",`?id=eq.${id}`);
+  allArticles=allArticles.filter(a=>a.id!==id);
+  renderArticles();
+}
+
+async function uploadImgDash(input,id){
+  const file=input.files[0]; if(!file) return;
+  const path=`dash_${id}_${Date.now()}.${file.name.split('.').pop()}`;
+  const r=await fetch(`https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/artikel-bilder/${path}`,{
+    method:'POST',
+    headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+localStorage.getItem('dash_token'),'Content-Type':file.type},
+    body:file
+  });
+  if(r.ok){
+    const url=`https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/public/artikel-bilder/${path}`;
+    await api("PATCH","articles",`?id=eq.${id}`,{image_url:url});
+    const a=allArticles.find(x=>x.id===id);
+    if(a) a.image_url=url;
+    renderArticles();
+    alert('✅ Bild hochgeladen!');
+  }
+}
+
+function populateSectionSelect(){
+  const typeEl=document.getElementById('new-art-type');
+  const secEl=document.getElementById('new-art-section');
+  if(!typeEl||!secEl) return;
+  const type=typeEl.value;
+  const cats=[...new Set(allArticles.filter(a=>a.type===type).map(a=>a.section).filter(Boolean))].sort();
+  secEl.innerHTML='<option value="">-- Kategorie wählen --</option>';
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;secEl.appendChild(o);});
+  const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='➕ Neue Kategorie';secEl.appendChild(newOpt);
+  secEl.onchange=function(){
+    const wrap=document.getElementById('new-cat-wrap-dash');
+    if(wrap) wrap.style.display=this.value==='__new__'?'block':'none';
+  };
+}
+
+// Update section when type changes
+document.addEventListener('DOMContentLoaded',()=>{
+  const typeEl=document.getElementById('new-art-type');
+  if(typeEl) typeEl.onchange=populateSectionSelect;
+});
 </script>
 </body>
 </html>
