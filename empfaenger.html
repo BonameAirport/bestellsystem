@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Lager Bestellungen</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1f5f9;}
+.header{background:linear-gradient(135deg,#052e16,#14532d,#16a34a);padding:16px 20px;}
+.header h1{font-size:18px;font-weight:800;color:white;}
+.header .sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px;}
+.filter-bar{display:flex;gap:8px;padding:12px 16px;background:#1e293b;border-bottom:1px solid #334155;overflow-x:auto;}
+.filter-btn{padding:7px 16px;border:1.5px solid #334155;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:#64748b;white-space:nowrap;flex-shrink:0;}
+.filter-btn.on{background:#16a34a;color:white;border-color:#16a34a;}
+.wrap{max-width:500px;margin:0 auto;padding:14px 14px 80px;}
+/* LIST */
+.card{background:#1e293b;border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid #334155;cursor:pointer;}
+.card:active{opacity:0.8;}
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.card-name{font-size:15px;font-weight:800;color:#f1f5f9;}
+.card-date{font-size:12px;color:#64748b;}
+.card-type{font-size:11px;font-weight:700;margin-top:4px;}
+.type-lager{color:#16a34a;}
+.type-airside{color:#2563eb;}
+.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-offen{background:#fef3c7;color:#b45309;}
+.b-ok{background:#d1fae5;color:#065f46;}
+.b-done{background:#e0e7ff;color:#3730a3;}
+/* DETAIL */
+.detail-header{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#1e293b;border-bottom:1px solid #334155;position:sticky;top:0;z-index:10;}
+.back-btn{background:#334155;border:none;border-radius:8px;width:36px;height:36px;color:#f1f5f9;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.detail-title{font-size:15px;font-weight:800;color:#f1f5f9;}
+.detail-sub{font-size:12px;color:#64748b;margin-top:2px;}
+.info-card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
+.info-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+.info-label{font-size:12px;color:#64748b;width:70px;flex-shrink:0;}
+.info-val{font-size:14px;font-weight:700;color:#f1f5f9;}
+.items-card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
+.sec-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
+.item-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #334155;}
+.item-row:last-child{border-bottom:none;}
+.item-img{width:56px;height:56px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+.item-ph{width:56px;height:56px;border-radius:12px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.item-name{flex:1;font-size:14px;font-weight:700;color:#f1f5f9;}
+.item-unit{font-size:11px;color:#64748b;margin-top:2px;}
+.item-qty{font-size:15px;font-weight:800;color:white;background:#16a34a;padding:6px 14px;border-radius:10px;white-space:nowrap;}
+.item-delivered{width:52px;border:1.5px solid #334155;border-radius:8px;padding:5px;font-size:14px;font-weight:800;text-align:center;font-family:inherit;background:#0f172a;color:#f1f5f9;outline:none;}
+.item-delivered.short{border-color:#dc2626;color:#f87171;}
+.action-btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-transit{background:#2563eb;color:white;}
+.btn-missing{background:#dc2626;color:white;}
+.note-box{background:#1e3a5f;border-radius:10px;padding:12px;margin-bottom:10px;font-size:13px;color:#93c5fd;}
+.empty{text-align:center;padding:50px 20px;color:#64748b;font-size:14px;}
+.loading{text-align:center;padding:50px 20px;color:#64748b;}
+.refresh-btn{position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:#16a34a;border:none;color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:50;}
+
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;}
+.login-title{font-size:20px;font-weight:800;color:#f1f5f9;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:24px;}
+.login-input{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;}
+.login-btn-main{width:100%;background:#16a34a;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+.login-err{display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;}
+
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">📋 Lager</div>
+    <div class="login-sub">bona'me × Lagardère</div>
+    <input type="email" id="login-email" class="login-input" placeholder="Email" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="login-pw" class="login-input" placeholder="Passwort" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn-main" onclick="doLogin()">🔐 Anmelden</button>
+    <div class="login-err" id="login-err">❌ Falsche Email oder Passwort</div>
+  </div>
+</div>
+<div class="header" id="main-header">
+  <h1>📋 Lager Bestellungen</h1>
+  <div class="sub">bona'me × Lagardère</div>
+</div>
+<div class="filter-bar" id="filter-bar">
+  <button class="filter-btn on" id="f-all" onclick="setFilter('all')">Alle</button>
+  <button class="filter-btn" id="f-lager" onclick="setFilter('lager')">📦 Landside</button>
+  <button class="filter-btn" id="f-airside" onclick="setFilter('airside_lager')">✈️ Airside</button>
+  <button class="filter-btn" id="f-done" onclick="setFilter('done')">✅ Abgeschlossen</button>
+</div>
+<div id="main-wrap">
+  <div class="wrap"><div class="loading">⏳ Lädt...</div></div>
+</div>
+<button class="refresh-btn" id="refresh-btn" onclick="loadOrders()">↻</button>
+
+<script>
+const SB_URL="https://xltsjtbbbykftmjkhcjm.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+const H={"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"};
+let allOrders=[], imgMap={}, sectionMap={}, currentFilter='all';
+
+async function api(method,table,query="",body=null){
+  try{
+    const token=localStorage.getItem('sb_token');
+    const headers={...H};
+    if(token) headers['Authorization']='Bearer '+token;
+    const o={method,headers};
+    if(body) o.body=JSON.stringify(body);
+    if(method==="PATCH") o.headers["Prefer"]="return=representation";
+    const r=await fetch(`${SB_URL}/rest/v1/${table}${query}`,o);
+    if(!r.ok) return null;
+    if(method==="PATCH") return true;
+    return await r.json();
+  }catch(e){return null;}
+}
+
+async function loadAll(){
+  // Load orders first - fast
+  await loadOrders();
+  // Load article images in background
+  api("GET","articles","?select=name,image_url,section").then(arts=>{
+    if(arts) arts.forEach(a=>{
+      if(a.name){
+        if(a.image_url) imgMap[a.name.trim()]=a.image_url;
+        sectionMap[a.name.trim()]=a.section||"";
+      }
+    });
+  });
+}
+
+async function loadOrders(){
+  const wrap=document.getElementById('main-wrap');
+  try{
+    const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
+    if(data===null){
+      wrap.innerHTML='<div class="wrap"><div class="empty">❌ Verbindungsfehler – bitte Seite neu laden</div></div>';
+      return;
+    }
+    allOrders=data||[];
+    renderList();
+    // Load images in background
+    api("GET","articles","?select=name,image_url").then(arts=>{
+      if(arts) arts.forEach(a=>{if(a.image_url&&a.name) imgMap[a.name.trim()]=a.image_url;});
+    });
+  }catch(e){
+    wrap.innerHTML='<div class="wrap"><div class="empty">❌ Fehler: '+e.message+'</div></div>';
+  }
+}
+
+function setFilter(f){
+  currentFilter=f;
+  ['all','lager','airside','done'].forEach(k=>{
+    document.getElementById('f-'+k)?.classList.toggle('on',k===f);
+  });
+  renderList();
+}
+
+function getImg(name){
+  return name?imgMap[name.trim()]||null:null;
+}
+
+function renderList(){
+  const wrap=document.getElementById('main-wrap');
+  document.getElementById('filter-bar').style.display='flex';
+  document.getElementById('main-header').innerHTML='<h1>📋 Lager Bestellungen</h1><div class="sub">bona\'me × Lagardère</div>';
+  document.getElementById('refresh-btn').style.display='flex';
+
+  const isDone=currentFilter==='done';
+  let filtered=allOrders.filter(o=>{
+    if(isDone) return ['angekommen','fehler'].includes(o.status);
+    if(currentFilter==='all') return !['angekommen','fehler'].includes(o.status);
+    return o.type===currentFilter && !['angekommen','fehler'].includes(o.status);
+  });
+
+  if(!filtered.length){
+    wrap.innerHTML='<div class="wrap"><div class="empty">📭 Keine Bestellungen</div></div>';
+    return;
+  }
+
+  wrap.innerHTML='<div class="wrap">'+filtered.map(o=>{
+    const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
+    const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-done',fehler:'b-offen'}[o.status]||'b-offen';
+    const typeLabel=o.type==='lager'?'📦 Landside → Lager':'✈️ Airside → Lager';
+    const typeClass=o.type==='lager'?'type-lager':'type-airside';
+    const preview=o.items.slice(0,3).map(i=>`${i.item||i.name}: ${i.qty} ${i.unit||''}`).join(' · ')+(o.items.length>3?` +${o.items.length-3} mehr`:'');
+    const isDone=['angekommen','fehler'].includes(o.status);
+    const elapsed=!isDone?getElapsed(o.created_at):{text:'',mins:0};
+    const tColor=!isDone?getTimerColor(elapsed.mins):{color:'#64748b',bg:'transparent',emoji:''};
+    return `<div class="card" onclick="showDetail(${o.id})">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${o.orderer}</div>
+          <div class="card-date">${o.date}</div>
+          <div class="card-type ${typeClass}">${typeLabel}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="badge ${sc}">${sl}</span>
+          ${!isDone?`<span data-created="${o.created_at}" data-done="false" style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;color:${tColor.color};background:${tColor.bg};">${tColor.emoji} ${elapsed.text}</span>`:''}
+        </div>
+      </div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${preview}</div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function showDetail(id){
+  const o=allOrders.find(x=>x.id===id);
+  if(!o) return;
+
+  document.getElementById('filter-bar').style.display='none';
+  document.getElementById('refresh-btn').style.display='none';
+
+  const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
+  const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-done',fehler:'b-offen'}[o.status]||'b-offen';
+  const typeLabel=o.type==='lager'?'📦 Landside → Lager':'✈️ Airside → Lager';
+
+  // Group items by lager section
+  const grouped={};
+  o.items.forEach(i=>{
+    // Use section from order item directly, fallback to sectionMap
+    const section=i.section||sectionMap[(i.item||i.name).trim()]||'';
+    let groupKey='trocken';
+    if(section){
+      if(section.includes('TK')) groupKey='tk';
+      else if(section.includes('hlhaus')||section.includes('Getränke')||section.includes('getränke')) groupKey='kuehl';
+      else if(section.includes('Trockenlager')||section.includes('Kaffee')||section.includes('Hygiene')) groupKey='trocken';
+    }
+    if(!grouped[groupKey]) grouped[groupKey]=[];
+    grouped[groupKey].push(i);
+  });
+
+  let items='';
+  ['tk','kuehl','trocken'].forEach(gkey=>{
+    const gItems=grouped[gkey];
+    if(!gItems||!gItems.length) return;
+    const group=LAGER_GROUPS[gkey];
+    items+=`<div style="background:${group.color};border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;font-weight:800;color:white;">${group.label}</div>`;
+    items+=gItems.map(i=>{
+      const img=getImg(i.item||i.name);
+      const imgHtml=img?`<img class="item-img" src="${img}" onerror="this.outerHTML='<div class=item-ph>🖼️</div>'">`:'<div class="item-ph">🖼️</div>';
+      const key=(i.item||i.name).replace(/[^a-z0-9]/gi,'_');
+      return `<div class="item-row">
+        ${imgHtml}
+        <div style="flex:1;min-width:0;">
+          <div class="item-name">${i.item||i.name}</div>
+          <div class="item-unit">${i.unit||''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
+          <span class="item-qty">${i.qty}</span>
+          <input class="item-delivered" type="tel" inputmode="numeric" id="del-${key}" 
+            value="${i.qty}" 
+            onchange="checkDelivered('${key}','${i.qty}')"
+            style="width:52px;"/>
+          <div style="font-size:10px;color:#64748b;">geliefert</div>
+        </div>
+      </div>`;
+    }).join('');
+  });
+
+  const isDone=['angekommen','fehler'].includes(o.status);
+  let actions='';
+  if(!isDone){
+    actions=`<button class="action-btn btn-transit" onclick="sendDelivery(${o.id})">🚗 Unterwegs → Abgeschlossen</button>`;
+  } else {
+    actions='<div style="text-align:center;padding:12px;color:#64748b;font-size:13px;">✅ Bestellung abgeschlossen</div>';
+  }
+
+  document.getElementById('main-header').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="back-btn" onclick="renderList()">←</button>
+      <div>
+        <div class="detail-title">${o.orderer}</div>
+        <div class="detail-sub">${o.date} · <span class="badge ${sc}">${sl}</span></div>
+      </div>
+    </div>`;
+
+  document.getElementById('main-wrap').innerHTML=`<div class="wrap">
+    <div class="info-card">
+      <div class="info-row"><span class="info-label">📍 Typ:</span><span class="info-val">${typeLabel}</span></div>
+      ${o.note?`<div class="note-box">📝 ${o.note}</div>`:''}
+    </div>
+    <div class="items-card">
+      <div class="sec-title">Artikel (${o.items.length})</div>
+      ${items}
+    </div>
+    ${actions}
+  </div>`;
+}
+
+async function updateStatus(id,status){
+  const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  await api("PATCH","orders",`?id=eq.${id}`,{status,status_time:now});
+  const idx=allOrders.findIndex(o=>o.id===id);
+  if(idx>=0) allOrders[idx].status=status;
+  if(status==='angekommen'||status==='fehler'){
+    currentFilter='done';
+    ['all','lager','airside','done'].forEach(k=>{
+      document.getElementById('f-'+k)?.classList.toggle('on',k==='done');
+    });
+  }
+  renderList();
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const sess=localStorage.getItem('emp_session');
+  const token=localStorage.getItem('sb_token');
+  if(sess&&parseInt(sess)>Date.now()&&token){
+    document.getElementById('login-screen').style.display='none';
+    loadOrders();
+  }
+});
+setInterval(updateTimers,30000);
+setInterval(async()=>{
+  const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
+  if(data) allOrders=data;
+},30000);
+
+function checkDelivered(key, ordered){
+  const inp=document.getElementById('del-'+key);
+  if(!inp) return;
+  const delivered=parseInt(inp.value)||0;
+  const orderedNum=parseInt(ordered)||0;
+  if(delivered < orderedNum){
+    inp.classList.add('short');
+  } else {
+    inp.classList.remove('short');
+    if(delivered > orderedNum) inp.value=orderedNum;
+  }
+}
+
+async function sendDelivery(orderId){
+  const o=allOrders.find(x=>x.id===orderId);
+  if(!o) return;
+  
+  const missing=[];
+  o.items.forEach(i=>{
+    const key=(i.item||i.name).replace(/[^a-z0-9]/gi,'_');
+    const inp=document.getElementById('del-'+key);
+    const delivered=parseInt(inp?.value)||parseInt(i.qty);
+    const ordered=parseInt(i.qty);
+    if(delivered < ordered){
+      missing.push({name:i.item||i.name, ordered, delivered, diff:ordered-delivered, unit:i.unit||''});
+    }
+  });
+  
+  const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  const status=missing.length?'fehler':'angekommen';
+  
+  await api("PATCH","orders",`?id=eq.${orderId}`,{status,status_time:now});
+  const idx=allOrders.findIndex(x=>x.id===orderId);
+  if(idx>=0) allOrders[idx].status=status;
+  
+  if(missing.length){
+    let msg=`⚠️ *FEHLMELDUNG*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\nFolgendes fehlt:\n`;
+    missing.forEach(m=>msg+=`❌ ${m.name}: bestellt ${m.ordered}, geliefert ${m.delivered} (-${m.diff} ${m.unit})\n`);
+    const contacts=o.contacts||[];
+    contacts.forEach((c,i)=>setTimeout(()=>window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank'),i*800));
+  }
+  
+  currentFilter='done';
+  ['all','lager','airside','done'].forEach(k=>{
+    document.getElementById('f-'+k)?.classList.toggle('on',k==='done');
+  });
+  renderList();
+}
+
+// Section grouping for display
+const LAGER_GROUPS = {
+  'tk': {label:'❄️ TK Ware', color:'#1e3a5f', sections:['❄️ TK Ware']},
+  'kuehl': {label:'🧊 Kühlhaus & Getränke', color:'#1e3a3a', sections:['🧊 Kühlhaus','🥤 Getränke']},
+  'trocken': {label:'🫙 Trockenlager & Sonstiges', color:'#2d1f3a', sections:['🫙 Trockenlager','☕️ Kaffeeartikel','🧹 Hygieneartikel']}
+};
+
+function getGroupForSection(section){
+  for(const [key,group] of Object.entries(LAGER_GROUPS)){
+    if(group.sections.some(s=>section&&section.includes(s.replace(/^[^a-zA-Z]+/,'').trim().substring(0,5)))){
+      return {key,...group};
+    }
+  }
+  return {key:'trocken',label:'🫙 Sonstiges',color:'#2d1f3a'};
+}
+
+// ─── TIMER ───────────────────────────────────────────────
+function getElapsed(createdAt){
+  const diff=Math.floor((Date.now()-new Date(createdAt).getTime())/1000);
+  if(diff<60) return {text:'Gerade eben',mins:0};
+  const mins=Math.floor(diff/60);
+  if(mins<60) return {text:`${mins} Min`,mins};
+  const hrs=Math.floor(mins/60);
+  return {text:`${hrs}h ${mins%60}m`,mins};
+}
+
+function getTimerColor(mins){
+  if(mins<5) return {color:'#16a34a',bg:'rgba(22,163,74,0.15)',emoji:'🟢'};
+  if(mins<15) return {color:'#f59e0b',bg:'rgba(245,158,11,0.15)',emoji:'🟡'};
+  return {color:'#dc2626',bg:'rgba(220,38,38,0.15)',emoji:'🔴'};
+}
+
+function updateTimers(){
+  document.querySelectorAll('[data-created]').forEach(el=>{
+    const createdAt=el.dataset.created;
+    const isDone=el.dataset.done==='true';
+    if(isDone) return;
+    const {text,mins}=getElapsed(createdAt);
+    const {color,bg,emoji}=getTimerColor(mins);
+    el.textContent=`${emoji} ${text}`;
+    el.style.color=color;
+    el.style.background=bg;
+  });
+}
+
+// ─── LOGIN ───────────────────────────────────────────────
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err');
+  if(!email||!pw){ err.style.display='block'; err.textContent='❌ Bitte Email und Passwort eingeben.'; return; }
+  try{
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw})
+    });
+    const data=await r.json();
+    if(data.access_token){
+      localStorage.setItem('sb_token',data.access_token);
+      localStorage.setItem('emp_session',(Date.now()+28800000).toString());
+      document.getElementById('login-screen').style.display='none';
+      loadOrders();
+    } else {
+      err.style.display='block'; err.textContent='❌ Falsche Email oder Passwort';
+    }
+  }catch(e){
+    err.style.display='block'; err.textContent='❌ Verbindungsfehler';
+  }
+}
+</script>
+</body>
+</html>
