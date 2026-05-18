@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<!-- v1.1 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bestellsystem – Flughafen Restaurant</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: linear-gradient(135deg, #0f2d52 0%, #1a3a6b 50%, #14532d 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .logo { font-size: 48px; margin-bottom: 12px; }
+  h1 { color: white; font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+  .sub { color: #93c5fd; font-size: 13px; text-align: center; margin-bottom: 40px; letter-spacing: 1px; text-transform: uppercase; }
+
+  .cards { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; }
+
+  .card {
+    background: white;
+    border-radius: 18px;
+    padding: 24px 22px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    transition: transform .18s;
+  }
+  .card:active { transform: scale(0.97); }
+
+  .card-icon { font-size: 36px; flex-shrink: 0; }
+  .card-text {}
+  .card-title { font-size: 18px; font-weight: 800; margin-bottom: 3px; }
+  .card-desc { font-size: 13px; color: rgba(255,255,255,0.7); }
+
+  .card.airside .card-title { color: white; }
+  .card.lager   .card-title { color: white; }
+
+  .arrow { margin-left: auto; font-size: 20px; color: rgba(255,255,255,0.5); }
+</style>
+</head>
+<body>
+  <div class="logo">🍽️</div>
+  <h1>Bestellsystem</h1>
+  <p class="sub">Flughafen Restaurant</p>
+
+  <div class="cards">
+    <a href="/airside.html" class="card airside" style="background:linear-gradient(135deg,#0f2d52,#1a3a6b);color:white;">
+      <span class="card-icon">✈️</span>
+      <div class="card-text">
+        <div class="card-title">Landside ➡️ Airside</div>
+        <div class="card-desc">Landside bestellt bei Airside</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+    <a href="/lager.html" class="card lager" style="background:linear-gradient(135deg,#052e16,#14532d);color:white;">
+      <span class="card-icon">📦</span>
+      <div class="card-text">
+        <div class="card-title">Landside ➡️ Lager</div>
+        <div class="card-desc">Landside bestellt beim Lager</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+
+    <a href="/airside-lager.html" class="card" style="background:linear-gradient(135deg,#1e1b4b,#3730a3);color:white;">
+      <span class="card-icon">✈️📦</span>
+      <div class="card-text">
+        <div class="card-title">Airside → Lager</div>
+        <div class="card-desc">Airside bestellt beim Lager</div>
+      </div>
+      <span class="arrow">›</span>
+    </a>
+  </div>
+</body>
+</html>
