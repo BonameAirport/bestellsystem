@@ -148,12 +148,15 @@ async function doRegister(){
       body:JSON.stringify({email,password:pw,data:{full_name:name}})
     });
     const data=await r.json();
-    const userId = (data.user||data).id;
+    // Handle different Supabase response structures
+    const userId = data?.user?.id || data?.id || data?.session?.user?.id;
     if(userId){
       // Write to pending_users table
-      await fetch(`https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users`,{
+      const SB_URL2='https://xltsjtbbbykftmjkhcjm.supabase.co';
+      const SB_KEY2='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss';
+      await fetch(SB_URL2+'/rest/v1/pending_users',{
         method:'POST',
-        headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json','Prefer':'return=minimal'},
+        headers:{'apikey':SB_KEY2,'Content-Type':'application/json','Prefer':'return=minimal'},
         body:JSON.stringify({user_id:userId,email,full_name:name})
       });
       document.getElementById('reg-email').style.display='none';
