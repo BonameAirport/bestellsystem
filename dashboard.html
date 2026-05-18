@@ -151,7 +151,32 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
     <button class="filter-btn" id="fa-airside" onclick="setArticleFilter('airside')">✈️ Airside</button>
     <button class="filter-btn" id="fa-al" onclick="setArticleFilter('airside_lager')">🔄 Airside→Lager</button>
   </div>
-  <div class="wrap" id="articles-list"></div>
+  <div style="padding:10px 14px;background:#1e293b;border-bottom:1px solid #334155;">
+    <input type="text" id="art-search" placeholder="🔍 Artikel oder Kategorie suchen..." 
+      oninput="searchArticlesDash(this.value)"
+      style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:10px 14px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;"/>
+  </div>
+  <div class="wrap">
+    <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #334155;">
+      <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:10px;">➕ Neuen Artikel hinzufügen</div>
+      <input type="text" id="new-art-name" placeholder="Artikelname" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
+      <input type="text" id="new-art-unit" placeholder="Einheit (z.B. 1 KG, 6x2KG)" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
+      <select id="new-art-type" onchange="populateSectionSelect()" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
+        <option value="">-- Seite wählen --</option>
+        <option value="lager">📦 Landside → Lager</option>
+        <option value="airside">✈️ Landside → Airside</option>
+        <option value="airside_lager">🔄 Airside → Lager</option>
+      </select>
+      <select id="new-art-section" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
+        <option value="">-- Kategorie wählen --</option>
+      </select>
+      <div id="new-cat-wrap-dash" style="display:none;margin-bottom:8px;">
+        <input type="text" id="new-cat-input-dash" placeholder="z.B. 🥗 Salate" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;"/>
+      </div>
+      <button onclick="addArticleDash()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Artikel hinzufügen</button>
+    </div>
+    <div id="articles-list"></div>
+  </div>
 </div>
 
 <script>
