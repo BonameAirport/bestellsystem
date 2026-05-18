@@ -253,10 +253,11 @@ async function loadAll(){
 
 // ─── OVERVIEW ────────────────────────────────────────────
 function renderOverview(){
-  const today=new Date().toLocaleDateString("de-DE");
+  const now=new Date();
+  const todayStr=now.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}).split('.').slice(0,2).join('.');
   const open=allOrders.filter(o=>!['angekommen','fehler'].includes(o.status));
-  const done=allOrders.filter(o=>['angekommen','fehler'].includes(o.status)&&o.date&&o.date.includes(today.split('.').slice(0,2).join('.')));
-  const todayAll=allOrders.filter(o=>o.date&&o.date.startsWith(today.split('.').slice(0,2).join('.')));
+  const done=allOrders.filter(o=>['angekommen','fehler'].includes(o.status)&&o.date&&o.date.includes(todayStr));
+  const todayAll=allOrders.filter(o=>o.date&&o.date.includes(todayStr));
   
   document.getElementById('stat-open').textContent=open.length;
   document.getElementById('stat-done').textContent=done.length;
@@ -344,6 +345,7 @@ function renderArticles(){
           <div class="art-unit">${a.unit}</div>
         </div>
         <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
+        <button onclick="editArticleDash(${a.id},this.dataset.name,this.dataset.unit)" data-name="${a.name}" data-unit="${a.unit}" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">✏️</button>
         <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
       </div>`).join('')}
     </div>`).join('');
@@ -570,9 +572,21 @@ function searchArticlesDash(q){
         ${a.image_url?`<img class="art-img" src="${a.image_url}">`:'<div class="art-ph">🖼️</div>'}
         <div style="flex:1;min-width:0;"><div class="art-name">${a.name}</div><div class="art-unit">${a.unit}</div></div>
         <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
+        <button onclick="editArticleDash(${a.id},this.dataset.name,this.dataset.unit)" data-name="${a.name}" data-unit="${a.unit}" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">✏️</button>
         <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
       </div>`).join('')}
     </div>`).join('');
+}
+
+async function editArticleDash(id, name, unit){
+  const newName=prompt('Name:', name);
+  if(!newName) return;
+  const newUnit=prompt('Einheit:', unit);
+  if(!newUnit) return;
+  await api("PATCH","articles","?id=eq."+id,{name:newName,unit:newUnit});
+  const a=allArticles.find(x=>x.id===id);
+  if(a){a.name=newName;a.unit=newUnit;}
+  renderArticles();
 }
 </script>
 </body>
