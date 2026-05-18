@@ -186,7 +186,6 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 .art-row.drag-over-top{border-top:3px solid #2563eb !important;}
 .art-row.drag-over-bottom{border-bottom:3px solid #2563eb !important;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
@@ -397,6 +396,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
   </button>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const SB_URL="https://xltsjtbbbykftmjkhcjm.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
@@ -1119,7 +1119,445 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
 </div>
 
 
+<!-- MITARBEITER MODAL -->
+<div class="admin-modal" id="mitarbeiter-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
+      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
+    <div id="pending-list-app"></div>
+    
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
+    <div id="users-list-app"></div>
+  </div>
+</div>
+</body></html>`;
+  const w=window.open('','_blank'); w.document.write(html); w.document.close();
+}
 
+// ─── DARK MODE ───────────────────────────────────────────
+function toggleDark(){
+  const isDark=document.body.classList.toggle("dark");
+  localStorage.setItem("dark",isDark?"1":"0");
+  document.getElementById("dark-btn").textContent=isDark?"☀️":"🌙";
+  // Re-render articles so colors update
+  if(articles.length) renderArticles();
+}
+function applyDark(on){ if(on) document.body.classList.add("dark"); document.getElementById("dark-btn").textContent=on?"☀️":"🌙"; }
+
+// ─── NAME / COOKIE ───────────────────────────────────────
+function saveName(v){
+  localStorage.setItem("uname",v);
+  const d=new Date(); d.setFullYear(d.getFullYear()+1);
+  document.cookie=`uname=${encodeURIComponent(v)};expires=${d.toUTCString()};path=/`;
+}
+function getCookie(n){ const m=document.cookie.match(new RegExp("(^| )"+n+"=([^;]+)")); return m?decodeURIComponent(m[2]):null; }
+
+// ─── LANGUAGE ────────────────────────────────────────────
+const LABELS={
+  de:{order:"➕ Bestellen",history:"📋 Verlauf",stats:"📊 Statistik",name:"👤 DEIN NAME *",recipient:"📲 EMPFÄNGER *",notes:"📝 ANMERKUNGEN",selected:"Artikel ausgewählt",cartBtn:"🛒 Warenkorb anzeigen",send:"Per WhatsApp senden"},
+  en:{order:"➕ Order",history:"📋 History",stats:"📊 Statistics",name:"👤 YOUR NAME *",recipient:"📲 RECIPIENT *",notes:"📝 NOTES",selected:"items selected",cartBtn:"🛒 View Cart",send:"Send via WhatsApp"},
+  tr:{order:"➕ Sipariş",history:"📋 Geçmiş",stats:"📊 İstatistik",name:"👤 ADIN *",recipient:"📲 ALICI *",notes:"📝 NOTLAR",selected:"ürün seçildi",cartBtn:"🛒 Sepeti Görüntüle",send:"WhatsApp ile Gönder"}
+};
+
+function setLang(l){
+  currentLang=l; localStorage.setItem("lang",l); updateLangUI();
+  document.querySelectorAll('.item-row[data-id], [data-id]').forEach(row=>{
+    const id=parseInt(row.dataset.id);
+    const art=articles.find(a=>a.id===id);
+    if(!art) return;
+    const nameEl=row.querySelector('div[style*="font-size:14px"]');
+    if(nameEl) nameEl.textContent=art.name;
+  });
+}
+
+function updateLangUI(){
+  ["de","en","tr"].forEach(l=>document.getElementById("lb-"+l).classList.toggle("on",l===currentLang));
+  const lb=LABELS[currentLang]||LABELS.de;
+  document.getElementById("tab-order").textContent=lb.order;
+  document.getElementById("tab-history").textContent=lb.history;
+  const ts=document.getElementById("tab-stats"); if(ts) ts.textContent=lb.stats;
+  document.getElementById("lbl-name").textContent=lb.name;
+  document.getElementById("lbl-notes").textContent=lb.notes;
+  document.getElementById("lbl-cart").textContent="🛒 "+lb.order.replace("➕ ","");
+  document.getElementById("lbl-cart-btn").textContent=lb.cartBtn;
+  document.getElementById("lbl-send").textContent=lb.send;
+  document.getElementById("lbl-items-selected").textContent=lb.selected;
+}
+
+function setItemQty(id, val){
+  const n = parseInt(val);
+  const art = articles.find(a=>a.id===id);
+  if(!art) return;
+  if(n > 0){
+    if(!cart[id]) cart[id]={id:art.id,name:art.name,unit:art.unit,section:art.section||"",qty:n};
+    else cart[id].qty = n;
+  } else {
+    delete cart[id];
+  }
+  updateCartUI();
+  // Update badge style
+  const badge = document.getElementById('qty-'+id);
+  if(badge){
+    const q = cart[id]?cart[id].qty:0;
+    badge.value = q;
+    const sz=q>=100?58:q>=10?50:42;
+    badge.style.width=sz+'px';
+    badge.style.height=sz+'px';
+    badge.style.fontSize=(q>=100?12:q>=10?13:14)+'px';
+    badge.style.background=q>0?'#2563eb':'transparent';
+    badge.style.border=q>0?'2px solid #2563eb':'2px solid #cbd5e1';
+    badge.style.color=q>0?'white':'#94a3b8';
+  }
+}
+
+function moveArticle(id, direction){
+  const idx = articles.findIndex(a=>a.id===id);
+  if(idx<0) return;
+  const newIdx = direction==='up' ? idx-1 : idx+1;
+  if(newIdx<0 || newIdx>=articles.length) return;
+  // Swap
+  [articles[idx], articles[newIdx]] = [articles[newIdx], articles[idx]];
+  renderArticles();
+  loadAdminArticles();
+}
+
+// ─── TOUCH DRAG & DROP FOR ADMIN ─────────────────────────
+document.addEventListener('contextmenu', function(e){
+  if(e.target.closest('.drag-handle')) e.preventDefault();
+});
+let _dragEl = null;
+let _dragClone = null;
+let _longPressTimer = null;
+let _dragStartY = 0;
+let _cloneStartTop = 0;
+
+function initAdminDrag(){
+  document.querySelectorAll('.art-row').forEach(row => {
+    // Remove old listeners by cloning
+    const newRow = row.cloneNode(true);
+    row.parentNode.replaceChild(newRow, row);
+  });
+  
+  document.querySelectorAll('.art-row').forEach(row => {
+    row.addEventListener('touchstart', function(e){
+      const handle = e.target.closest('.drag-handle');
+      if(!handle) return;
+      const touch = e.touches[0];
+      _longPressTimer = setTimeout(()=>{
+        if(navigator.vibrate) navigator.vibrate(40);
+        _dragEl = this;
+        _dragStartY = touch.clientY;
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        const rect = this.getBoundingClientRect();
+        _cloneStartTop = rect.top;
+        _dragClone = this.cloneNode(true);
+        _dragClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:9999;opacity:0.95;box-shadow:0 12px 40px rgba(0,0,0,0.4);border-radius:10px;pointer-events:none;background:white;`;
+        document.body.appendChild(_dragClone);
+        this.style.visibility = 'hidden';
+      }, 400);
+    }, {passive:true});
+
+    row.addEventListener('touchmove', function(e){
+      clearTimeout(_longPressTimer);
+      if(!_dragEl || !_dragClone) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const delta = touch.clientY - _dragStartY;
+      _dragClone.style.top = (_cloneStartTop + delta) + 'px';
+
+      // Highlight target
+      document.querySelectorAll('.art-row').forEach(r => {
+        r.style.borderTop = '';
+        r.style.borderBottom = '';
+      });
+      const rows = [...document.querySelectorAll('.art-row')].filter(r=>r!==_dragEl);
+      for(let r of rows){
+        const rb = r.getBoundingClientRect();
+        const mid = rb.top + rb.height/2;
+        if(touch.clientY >= rb.top && touch.clientY <= rb.bottom){
+          if(touch.clientY < mid) r.style.borderTop = '3px solid #2563eb';
+          else r.style.borderBottom = '3px solid #2563eb';
+          break;
+        }
+      }
+    }, {passive:false});
+
+    row.addEventListener('touchend', function(e){
+      clearTimeout(_longPressTimer);
+      if(!_dragEl || !_dragClone){
+        _dragEl = null; _dragClone = null; return;
+      }
+      const touch = e.changedTouches[0];
+      
+      // Find target
+      const rows = [...document.querySelectorAll('.art-row')].filter(r=>r!==_dragEl);
+      let targetRow = null;
+      let insertBefore = true;
+      
+      for(let r of rows){
+        const rb = r.getBoundingClientRect();
+        if(touch.clientY >= rb.top && touch.clientY <= rb.bottom){
+          targetRow = r;
+          insertBefore = touch.clientY < (rb.top + rb.height/2);
+          break;
+        }
+      }
+
+      // Clean up
+      _dragClone.remove();
+      _dragEl.style.visibility = '';
+      document.querySelectorAll('.art-row').forEach(r => {
+        r.style.borderTop = '';
+        r.style.borderBottom = '';
+      });
+
+      // Reorder articles array
+      if(targetRow){
+        const fromId = parseInt(_dragEl.dataset.articleId);
+        const toId = parseInt(targetRow.dataset.articleId);
+        const fromIdx = articles.findIndex(a=>a.id===fromId);
+        let toIdx = articles.findIndex(a=>a.id===toId);
+        
+        if(fromIdx>=0 && toIdx>=0 && fromIdx!==toIdx){
+          const [item] = articles.splice(fromIdx, 1);
+          // Recalculate toIdx after splice
+          toIdx = articles.findIndex(a=>a.id===toId);
+          if(insertBefore) articles.splice(toIdx, 0, item);
+          else articles.splice(toIdx+1, 0, item);
+          renderArticles();
+          loadAdminArticles();
+          // Save new sort_order to Supabase
+          articles.forEach((a, idx) => {
+            api("PATCH","articles",`?id=eq.${a.id}`,{sort_order: idx});
+          });
+        }
+      }
+
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      _dragEl = null;
+      _dragClone = null;
+    });
+  });
+}
+
+// ─── CATEGORIES ──────────────────────────────────────────
+function populateCategorySelect(){
+  const sel = document.getElementById('na-sec');
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- Kategorie wählen --</option>';
+  categories.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__'; newOpt.textContent = '➕ Neue Kategorie erstellen';
+  sel.appendChild(newOpt);
+  if(current) sel.value = current;
+}
+
+function checkNewCat(sel){
+  const wrap = document.getElementById('new-cat-wrap');
+  if(sel.value === '__new__'){
+    wrap.style.display = 'block';
+    document.getElementById('new-cat-input').focus();
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function getSelectedCategory(){
+  const sel = document.getElementById('na-sec');
+  if(sel.value === '__new__'){
+    const inp = document.getElementById('new-cat-input');
+    const newCat = inp?.value.trim();
+    if(!newCat){ alert('Bitte Kategorie-Name eingeben.'); return null; }
+    // Add to categories list if not exists
+    if(!categories.includes(newCat)) categories.push(newCat);
+    return newCat;
+  }
+  return sel.value || null;
+}
+
+// ─── OPENING HOURS ───────────────────────────────────────
+const OH_DAYS=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+const OH_DAYS_DE=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+let openingHours=null;
+
+async function loadOpeningHours(){
+  try{
+    const data=await api("GET","settings","?key=eq.opening_hours");
+    if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
+  }catch(e){}
+  updateOpeningStatus();
+  setInterval(updateOpeningStatus,60000);
+}
+
+function checkIsOpen(){
+  if(!openingHours||isAdmin) return true;
+  const now=new Date();
+  const day=OH_DAYS[now.getDay()];
+  const h=openingHours[day];
+  if(!h||h.closed) return false;
+  const [oh,om]=h.open.split(":").map(Number);
+  const [ch,cm]=h.close.split(":").map(Number);
+  const nm=now.getHours()*60+now.getMinutes();
+  return nm>=(oh*60+om)&&nm<(ch*60+cm);
+}
+
+function getMinutesUntilClose(){
+  if(!openingHours) return 9999;
+  const now=new Date();
+  const day=OH_DAYS[now.getDay()];
+  const h=openingHours[day];
+  if(!h||h.closed) return 0;
+  const [ch,cm]=h.close.split(":").map(Number);
+  return(ch*60+cm)-(now.getHours()*60+now.getMinutes());
+}
+
+function getNextOpenTime(){
+  if(!openingHours) return "";
+  const now=new Date();
+  for(let i=1;i<=7;i++){
+    const di=(now.getDay()+i)%7;
+    const h=openingHours[OH_DAYS[di]];
+    if(h&&!h.closed) return `${OH_DAYS_DE[di]} um ${h.open} Uhr`;
+  }
+  return "";
+}
+
+let _warn60=false,_warn30=false;
+function updateOpeningStatus(){
+  const isOpen=checkIsOpen();
+  const mins=getMinutesUntilClose();
+  const banner=document.getElementById("oh-closed-banner");
+  const cartBtn=document.getElementById("cart-btn");
+
+  if(!isOpen&&!isAdmin){
+    if(banner) banner.style.display="block";
+    const ne=document.getElementById("oh-next-open");
+    if(ne) ne.textContent=getNextOpenTime()?`Nächste Öffnung: ${getNextOpenTime()}`:"";
+    document.querySelectorAll("[onclick*='changeItemQty']").forEach(b=>{b.style.opacity="0.3";b.style.pointerEvents="none";});
+    if(cartBtn){cartBtn.style.opacity="0.5";cartBtn.style.pointerEvents="none";}
+  } else {
+    if(banner) banner.style.display="none";
+    document.querySelectorAll("[onclick*='changeItemQty']").forEach(b=>{b.style.opacity="";b.style.pointerEvents="";});
+    if(cartBtn){cartBtn.style.opacity="";cartBtn.style.pointerEvents="";}
+  }
+
+  if(isOpen&&!isAdmin){
+    if(mins<=30&&!_warn30){_warn30=true;alert(`⚠️ Das Lager schließt in ${mins} Minuten!`);}
+    else if(mins<=60&&!_warn60){_warn60=true;alert(`⏰ Das Lager schließt in ca. 1 Stunde.`);}
+  }
+}
+
+function openOhAdmin(){
+  const m=document.getElementById("oh-admin-modal");
+  if(m){m.classList.add("on");renderOhAdmin();}
+}
+function closeOhAdmin(){document.getElementById("oh-admin-modal").classList.remove("on");}
+
+function renderOhAdmin(){
+  const el=document.getElementById("oh-admin-content");if(!el) return;
+  const h=openingHours||{};
+  el.innerHTML=OH_DAYS.map((day,i)=>{
+    const d=h[day]||{open:"07:00",close:"17:00",closed:false};
+    return `<div style="padding:10px 0;border-bottom:1px solid #f1f5f9;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:14px;font-weight:700;color:#0f172a;">${OH_DAYS_DE[i]}</span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#64748b;">
+          <input type="checkbox" id="closed-${day}" ${d.closed?"checked":""} onchange="toggleDayClosed('${day}')"/> Geschlossen
+        </label>
+      </div>
+      <div id="times-${day}" style="display:${d.closed?"none":"flex"};gap:10px;align-items:center;">
+        <input type="time" id="open-${day}" value="${d.open}" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-family:inherit;font-size:14px;outline:none;"/>
+        <span style="color:#64748b;">bis</span>
+        <input type="time" id="close-${day}" value="${d.close}" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-family:inherit;font-size:14px;outline:none;"/>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function toggleDayClosed(day){
+  const cb=document.getElementById("closed-"+day);
+  const t=document.getElementById("times-"+day);
+  if(t) t.style.display=cb.checked?"none":"flex";
+}
+
+async function saveOpeningHours(){
+  const h={};
+  OH_DAYS.forEach(day=>{
+    const closed=document.getElementById("closed-"+day)?.checked||false;
+    const open=document.getElementById("open-"+day)?.value||"07:00";
+    const close=document.getElementById("close-"+day)?.value||"17:00";
+    h[day]={open,close,closed};
+  });
+  openingHours=h;
+  await api("PATCH","settings","?key=eq.opening_hours",{value:JSON.stringify(h)});
+  closeOhAdmin();
+  updateOpeningStatus();
+  alert("✅ Öffnungszeiten gespeichert!");
+}
+
+function openArticleAdmin(){
+  document.getElementById("admin-modal").classList.add("on");
+  document.getElementById("admin-pin-section").style.display="none";
+  populateCategorySelect();
+  document.getElementById("admin-content").style.display="block";
+  loadAdminArticles();
+}
+
+// ─── SCROLL BUTTON ───────────────────────────────────────
+window.addEventListener('scroll',function(){
+  const btn=document.getElementById('scroll-btn');
+  if(!btn) return;
+  if(window.scrollY<150){
+    btn.style.display='none';
+  } else {
+    btn.style.display='flex';
+    btn.textContent='↑';
+    btn.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
+  }
+});
+
+// ─── ARCHIVE ─────────────────────────────────────────────
+function openArchiveModal(){ document.getElementById("archive-modal").classList.add("on"); }
+function closeArchiveModal(){ document.getElementById("archive-modal").classList.remove("on"); }
+
+async function archiveOrders(days){
+  const label = days===0 ? "alle Bestellungen" : `Bestellungen älter als ${days} Tage`;
+  if(!confirm(`${label} exportieren und löschen?`)) return;
+  
+  // Load orders
+  let query = "?type=eq."+TYPE+"&order=created_at.asc";
+  if(days>0){
+    const cutoff = new Date(Date.now()-days*86400000).toISOString();
+    query += "&created_at=lt."+cutoff;
+  }
+  const orders = await api("GET","orders",query);
+  if(!orders||!orders.length){ alert("Keine Bestellungen gefunden."); return; }
+  
+  // Export as PDF
+  let html = `<html><head><meta charset="UTF-8"/><style>body{font-family:Arial;padding:20px;}h1{color:#14532d;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#14532d;color:white;}</style></head><body>`;
+  html += `<h1>Archiv – ${label}</h1><p>Exportiert am: ${new Date().toLocaleString("de-DE")}</p>`;
+  html += `<table><tr><th>Von</th><th>Datum</th><th>Typ</th><th>Artikel</th><th>Status</th></tr>`;
+  orders.forEach(o=>{
+    html += `<tr><td>${o.orderer}</td><td>${o.date}</td><td>${o.type}</td><td>${o.items.map(i=>`${i.item||i.name}: ${i.qty}`).join(", ")}</td><td>${o.status}</td></tr>`;
+  });
+  html += "</table>";
+  const w=window.open("","_blank");
+  if(w){w.document.write(html);w.document.close();w.print();}
+  closeArchiveModal();
+  alert("✅ Exportiert!");
+}
+</script>
 <!-- MITARBEITER PAGE -->
 <div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#0f172a;z-index:100;overflow-y:auto;">
   <div id="mit-qr-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;">
@@ -1157,4 +1595,128 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
     </div>
   </div>
 </div>
+<script>
+
+// ─── MITARBEITER PAGE ────────────────────────────────────
+var _mitId=null,_mitName='',_mitRole='',_mitQrDone=false,_pendingData={};
+
+function showMitarbeiterPage(){
+  document.getElementById('mitarbeiter-page').style.display='block';
+  if(!_mitQrDone){
+    _mitQrDone=true;
+    try{new QRCode(document.getElementById('mit-qr-code'),{text:'https://airport-dus-boname.netlify.app/register.html',width:180,height:180,colorDark:'#7c3aed',colorLight:'#1e293b',correctLevel:QRCode.CorrectLevel.H});}catch(e){}
+  }
+  loadMitarbeiterPage();
+}
+function hideMitarbeiterPage(){document.getElementById('mitarbeiter-page').style.display='none';}
+function showMitQR(){document.getElementById('mit-qr-overlay').style.display='flex';}
+function openMitAction(id,name,role){
+  _mitId=id;_mitName=name;_mitRole=role;
+  document.getElementById('mit-action-name').textContent=name;
+  document.getElementById('mit-action-rolelabel').textContent=role;
+  document.getElementById('mit-action-sheet').style.display='flex';
+}
+function closeMitAction(){document.getElementById('mit-action-sheet').style.display='none';}
+async function mitActionEdit(){
+  closeMitAction();
+  var n=prompt('Name aendern:',_mitName);
+  if(n===null||n===_mitName) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({full_name:n})});
+  loadMitarbeiterPage();
+}
+async function mitActionRole(){
+  closeMitAction();
+  var r=prompt('Neue Rolle (besteller/lager/admin):',_mitRole);
+  if(!r||!['besteller','lager','admin'].includes(r)) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({role:r})});
+  loadMitarbeiterPage();
+}
+async function mitActionRemove(){
+  closeMitAction();
+  if(!confirm(_mitName+' entfernen?')) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'DELETE',headers:h});
+  loadMitarbeiterPage();
+}
+async function loadMitarbeiterPage(){
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  var results=await Promise.all([
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];}),
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=full_name.asc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];})
+  ]);
+  var pending=results[0]||[];
+  var roles=results[1]||[];
+  var assignedIds=new Set(roles.map(function(r){return r.user_id;}));
+  var pf=pending.filter(function(u){return !assignedIds.has(u.user_id);});
+  var visible=roles.filter(function(u){return u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1';});
+  document.getElementById('mit-count').textContent=visible.length+' aktiv, '+pf.length+' wartend';
+  _pendingData={};
+  pf.forEach(function(u){_pendingData[u.user_id]={email:u.email,name:u.full_name||u.email};});
+  var ps=document.getElementById('mit-pending-section');
+  if(!pf.length){ps.innerHTML='';}
+  else{
+    var html='<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:800;color:#f59e0b;letter-spacing:0.5px;margin-bottom:6px;">WARTEND ('+pf.length+')</div><div style="background:#1e293b;border-radius:14px;border:1px solid rgba(245,158,11,0.3);overflow:hidden;">';
+    pf.forEach(function(u,i){
+      html+='<div style="padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'"><div style="font-size:13px;font-weight:700;color:#f1f5f9;">'+(u.full_name||'Unbekannt')+'</div><div style="font-size:11px;color:#64748b;margin-bottom:8px;">'+u.email+'</div><div style="display:flex;gap:6px;"><select id="mit-role-'+u.user_id+'" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;"><option value="besteller">Besteller</option><option value="lager">Lager</option><option value="admin">Admin</option></select><button data-uid="'+u.user_id+'" class="mit-approve-btn" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">OK</button><button data-uid="'+u.user_id+'" class="mit-deny-btn" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">X</button></div></div>';
+    });
+    html+='</div></div>';
+    ps.innerHTML=html;
+    ps.querySelectorAll('.mit-approve-btn').forEach(function(btn){
+      btn.onclick=function(){
+        var uid=this.dataset.uid;
+        var d=_pendingData[uid];
+        var sel=document.getElementById('mit-role-'+uid);
+        var role=sel?sel.value:'besteller';
+        mitApprove(uid,d.email,d.name,role);
+      };
+    });
+    ps.querySelectorAll('.mit-deny-btn').forEach(function(btn){
+      btn.onclick=function(){mitDeny(this.dataset.uid);};
+    });
+  }
+  function renderSec(elId,color,label,users){
+    var el=document.getElementById(elId);
+    if(!users.length){el.innerHTML='';return;}
+    var html='<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:800;color:'+color+';letter-spacing:0.5px;margin-bottom:6px;">'+label+' ('+users.length+')</div><div style="background:#1e293b;border-radius:14px;border:1px solid #334155;overflow:hidden;">';
+    users.forEach(function(u,i){
+      var name=u.full_name||u.email||'Unbekannt';
+      html+='<div data-id="'+u.id+'" data-name="'+name.replace(/"/g,'&quot;')+'" data-role="'+u.role+'" class="mit-user-row" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'cursor:pointer;"><span style="font-size:14px;font-weight:600;color:#f1f5f9;">'+name+'</span><span style="color:#475569;font-size:20px;">&#8250;</span></div>';
+    });
+    html+='</div></div>';
+    el.innerHTML=html;
+    el.querySelectorAll('.mit-user-row').forEach(function(row){
+      row.onclick=function(){openMitAction(this.dataset.id,this.dataset.name,this.dataset.role);};
+    });
+  }
+  renderSec('mit-admins-section','#7c3aed','ADMIN',visible.filter(function(u){return u.role==='admin';}));
+  renderSec('mit-besteller-section','#2563eb','BESTELLER',visible.filter(function(u){return u.role==='besteller';}));
+  renderSec('mit-lager-section','#16a34a','LAGER',visible.filter(function(u){return u.role==='lager';}));
+}
+async function mitApprove(userId,email,name,role){
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers:h,body:JSON.stringify({user_id:userId,role:role,full_name:name,email:email})});
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
+  if(role==='lager'){
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'lager',name:name,phone:''})});
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'airside_lager',name:name,phone:''})});
+  }
+  alert(name+' freigeschaltet!');
+  loadMitarbeiterPage();
+}
+async function mitDeny(userId){
+  if(!confirm('Ablehnen?')) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
+  loadMitarbeiterPage();
+}
+
+</script>
 </body></html>
