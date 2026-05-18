@@ -78,6 +78,15 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .status-sub{font-size:11px;color:#64748b;margin-top:2px;}
 
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}.status-dot.checking{background:#f59e0b;animation:blink 1s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
+.delivery-stats{background:#1e293b;border-radius:14px;margin:0 14px 14px;padding:16px;border:1px solid #334155;}
+.delivery-stats-title{font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
+.delivery-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;}
+.delivery-row:last-child{border-bottom:none;}
+.delivery-label{font-size:13px;color:#94a3b8;}
+.delivery-val{font-size:14px;font-weight:800;color:#f1f5f9;}
+.delivery-val.good{color:#16a34a;}
+.delivery-val.warn{color:#f59e0b;}
+.delivery-val.bad{color:#dc2626;}
 </style>
 </head>
 <body>
@@ -263,6 +272,9 @@ function renderOverview(){
   document.getElementById('stat-done').textContent=done.length;
   document.getElementById('stat-today').textContent=todayAll.length;
   document.getElementById('stat-articles').textContent=allArticles.length;
+  
+  // Calculate delivery times
+  calcDeliveryTimes(done);
   
   // Recent orders
   const el=document.getElementById('recent-orders');
@@ -587,6 +599,47 @@ async function editArticleDash(id, name, unit){
   const a=allArticles.find(x=>x.id===id);
   if(a){a.name=newName;a.unit=newUnit;}
   renderArticles();
+}
+
+// ─── DELIVERY TIMES ──────────────────────────────────────
+function calcDeliveryTimes(doneOrders){
+  const el=document.getElementById('delivery-stats');
+  if(!el) return;
+  
+  if(!doneOrders.length){
+    el.style.display='none';
+    return;
+  }
+  
+  // Calculate minutes from created_at to status_time
+  const times=[];
+  doneOrders.forEach(o=>{
+    if(!o.created_at||!o.status_time) return;
+    try{
+      const created=new Date(o.created_at).getTime();
+      // Parse status_time "18.05.2026, 14:32"
+      const parts=o.status_time.split(', ');
+      if(parts.length<2) return;
+      const dateParts=parts[0].split('.');
+      const timeParts=parts[1].split(':');
+      const done=new Date(dateParts[2],dateParts[1]-1,dateParts[0],timeParts[0],timeParts[1]).getTime();
+      const mins=Math.round((done-created)/60000);
+      if(mins>0&&mins<300) times.push(mins);
+    }catch(e){}
+  });
+  
+  if(!times.length){el.style.display='none';return;}
+  
+  el.style.display='block';
+  const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+  const min=Math.min(...times);
+  const max=Math.max(...times);
+  
+  document.getElementById('del-avg').textContent=avg+' Min';
+  document.getElementById('del-avg').className='delivery-val '+(avg<15?'good':avg<30?'warn':'bad');
+  document.getElementById('del-min').textContent=min+' Min';
+  document.getElementById('del-max').textContent=max+' Min';
+  document.getElementById('del-count').textContent=doneOrders.length+' Bestellungen';
 }
 </script>
 </body>
