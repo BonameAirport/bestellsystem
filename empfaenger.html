@@ -379,6 +379,37 @@ function updateTimers(){
 
 
 
+
+// ─── REMINDERS ───────────────────────────────────────────
+let remindersSent = {};
+
+function checkReminders(){
+  const now = Date.now();
+  const twentyMin = 20 * 60 * 1000;
+  const tenMin = 10 * 60 * 1000;
+
+  allOrders.forEach(o=>{
+    if(['angekommen','fehler','unterwegs'].includes(o.status)) return;
+    const created = new Date(o.created_at).getTime();
+    const elapsed = now - created;
+    if(elapsed < twentyMin) return;
+
+    if(!remindersSent[o.id]) remindersSent[o.id] = {count:0, lastSent:0};
+    const r = remindersSent[o.id];
+    const firstReminder = r.count === 0 && elapsed >= twentyMin;
+    const repeatReminder = r.count > 0 && (now - r.lastSent) >= tenMin;
+
+    if(firstReminder || repeatReminder){
+      r.count++;
+      r.lastSent = now;
+      const contacts = o.contacts || [];
+      const msg = `⏰ *ERINNERUNG - OFFENE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${o.date}\n\nDiese Bestellung wartet seit ${Math.floor(elapsed/60000)} Minuten!\nBitte bestätigen. 👆`;
+      contacts.forEach((c,i)=>setTimeout(()=>window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank'),i*800));
+    }
+  });
+}
+
+setInterval(checkReminders, 60000);
 </script>
 </body>
 </html>
