@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Owner Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1f5f9;}
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;}
+.login-title{font-size:22px;font-weight:800;color:#f1f5f9;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:24px;}
+.login-input{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;}
+.login-btn-main{width:100%;background:#7c3aed;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+.login-err{display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;}
+/* HEADER */
+.header{background:linear-gradient(135deg,#1e1b4b,#3730a3,#7c3aed);padding:16px 20px;}
+.header-top{display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:18px;font-weight:800;color:white;}
+.header .sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px;}
+.logout-btn{background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);border-radius:8px;padding:6px 12px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+/* TABS */
+.tabs{display:flex;background:#1e293b;border-bottom:2px solid #334155;overflow-x:auto;}
+.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;}
+.tab.on{color:#7c3aed;border-bottom-color:#7c3aed;}
+/* STATS CARDS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;}
+.stat-card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155;}
+.stat-num{font-size:28px;font-weight:800;}
+.stat-label{font-size:12px;color:#64748b;margin-top:4px;}
+.stat-green{color:#16a34a;}
+.stat-blue{color:#2563eb;}
+.stat-purple{color:#7c3aed;}
+.stat-orange{color:#f59e0b;}
+/* ORDERS */
+.wrap{max-width:500px;margin:0 auto;padding:10px 14px 80px;}
+.card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.card-name{font-size:14px;font-weight:800;color:#f1f5f9;}
+.card-date{font-size:11px;color:#64748b;}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;}
+.b-offen{background:#fef3c7;color:#b45309;}
+.b-ok{background:#d1fae5;color:#065f46;}
+.b-err{background:#fee2e2;color:#dc2626;}
+.type-tag{font-size:11px;font-weight:700;margin-top:4px;}
+.t-lager{color:#16a34a;}
+.t-airside{color:#2563eb;}
+.t-al{color:#7c3aed;}
+/* FILTER */
+.filter-bar{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;background:#1e293b;border-bottom:1px solid #334155;}
+.filter-btn{padding:6px 14px;border:1.5px solid #334155;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:#64748b;white-space:nowrap;}
+.filter-btn.on{background:#7c3aed;color:white;border-color:#7c3aed;}
+/* ARTICLES */
+.art-section{background:#1e293b;border-radius:12px;margin-bottom:10px;overflow:hidden;border:1px solid #334155;}
+.art-section-head{padding:10px 14px;font-size:12px;font-weight:800;color:white;background:linear-gradient(135deg,#1e1b4b,#3730a3);}
+.art-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #334155;}
+.art-row:last-child{border-bottom:none;}
+.art-img{width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+.art-ph{width:40px;height:40px;border-radius:8px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.art-name{flex:1;font-size:13px;font-weight:700;color:#f1f5f9;}
+.art-unit{font-size:11px;color:#64748b;}
+.art-type{font-size:10px;color:#7c3aed;font-weight:700;}
+/* LIVE DOT */
+.live-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.empty{text-align:center;padding:40px 20px;color:#64748b;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-title">👑 Owner</div>
+    <div class="login-sub">bona'me Dashboard</div>
+    <input type="email" id="login-email" class="login-input" placeholder="Email" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="login-pw" class="login-input" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn-main" onclick="doLogin()">🔐 Anmelden</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>👑 Owner Dashboard</h1>
+      <div class="sub"><span class="live-dot"></span>Live · bona'me × Lagardère</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" id="tab-overview" onclick="showTab('overview')">📊 Übersicht</div>
+  <div class="tab" id="tab-orders" onclick="showTab('orders')">📋 Bestellungen</div>
+  <div class="tab" id="tab-articles" onclick="showTab('articles')">📦 Artikel</div>
+</div>
+
+<!-- OVERVIEW -->
+<div id="page-overview">
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
+    <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
+    <div class="stat-card"><div class="stat-num stat-blue" id="stat-today">-</div><div class="stat-label">Heute gesamt</div></div>
+    <div class="stat-card"><div class="stat-num stat-purple" id="stat-articles">-</div><div class="stat-label">Artikel gesamt</div></div>
+  </div>
+  <div class="wrap" id="recent-orders"></div>
+</div>
+
+<!-- ORDERS -->
+<div id="page-orders" style="display:none;">
+  <div class="filter-bar">
+    <button class="filter-btn on" id="fo-all" onclick="setOrderFilter('all')">Alle</button>
+    <button class="filter-btn" id="fo-lager" onclick="setOrderFilter('lager')">📦 Landside→Lager</button>
+    <button class="filter-btn" id="fo-airside" onclick="setOrderFilter('airside')">✈️ Landside→Airside</button>
+    <button class="filter-btn" id="fo-al" onclick="setOrderFilter('airside_lager')">🔄 Airside→Lager</button>
+    <button class="filter-btn" id="fo-done" onclick="setOrderFilter('done')">✅ Erledigt</button>
+  </div>
+  <div class="wrap" id="orders-list"></div>
+</div>
+
+<!-- ARTICLES -->
+<div id="page-articles" style="display:none;">
+  <div class="filter-bar">
+    <button class="filter-btn on" id="fa-all" onclick="setArticleFilter('all')">Alle</button>
+    <button class="filter-btn" id="fa-lager" onclick="setArticleFilter('lager')">📦 Lager</button>
+    <button class="filter-btn" id="fa-airside" onclick="setArticleFilter('airside')">✈️ Airside</button>
+    <button class="filter-btn" id="fa-al" onclick="setArticleFilter('airside_lager')">🔄 Airside→Lager</button>
+  </div>
+  <div class="wrap" id="articles-list"></div>
+</div>
+
+<script>
+const SB_URL="https://xltsjtbbbykftmjkhcjm.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+const H={"apikey":SB_KEY,"Content-Type":"application/json"};
+
+let allOrders=[], allArticles=[], orderFilter='all', articleFilter='all';
+
+async function api(method,table,query="",body=null){
+  try{
+    const token=localStorage.getItem('dash_token');
+    const headers={...H};
+    if(token) headers['Authorization']='Bearer '+token;
+    const o={method,headers};
+    if(body) o.body=JSON.stringify(body);
+    const r=await fetch(`${SB_URL}/rest/v1/${table}${query}`,o);
+    if(!r.ok) return null;
+    if(method==="DELETE") return true;
+    return await r.json();
+  }catch(e){return null;}
+}
+
+// ─── LOGIN ───────────────────────────────────────────────
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err');
+  if(!email||!pw){err.style.display='block';err.textContent='❌ Bitte Email und Passwort eingeben.';return;}
+  try{
+    const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw})
+    });
+    const data=await r.json();
+    if(data.access_token){
+      localStorage.setItem('dash_token',data.access_token);
+      localStorage.setItem('dash_session',(Date.now()+28800000).toString());
+      document.getElementById('login-screen').style.display='none';
+      loadAll();
+    }else{
+      err.style.display='block';err.textContent='❌ Falsche Email oder Passwort';
+    }
+  }catch(e){err.style.display='block';err.textContent='❌ Verbindungsfehler';}
+}
+
+function doLogout(){
+  localStorage.removeItem('dash_token');
+  localStorage.removeItem('dash_session');
+  location.reload();
+}
+
+// ─── TABS ─────────────────────────────────────────────────
+function showTab(tab){
+  ['overview','orders','articles'].forEach(t=>{
+    document.getElementById('page-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('on',t===tab);
+  });
+  if(tab==='orders') renderOrders();
+  if(tab==='articles') renderArticles();
+}
+
+// ─── LOAD ALL ─────────────────────────────────────────────
+async function loadAll(){
+  const [orders,articles]=await Promise.all([
+    api("GET","orders","?order=created_at.desc"),
+    api("GET","articles","?order=type.asc,section.asc,name.asc")
+  ]);
+  allOrders=orders||[];
+  allArticles=articles||[];
+  renderOverview();
+}
+
+// ─── OVERVIEW ────────────────────────────────────────────
+function renderOverview(){
+  const today=new Date().toLocaleDateString("de-DE");
+  const open=allOrders.filter(o=>!['angekommen','fehler'].includes(o.status));
+  const done=allOrders.filter(o=>['angekommen','fehler'].includes(o.status)&&o.date&&o.date.includes(today.split('.').slice(0,2).join('.')));
+  const todayAll=allOrders.filter(o=>o.date&&o.date.startsWith(today.split('.').slice(0,2).join('.')));
+  
+  document.getElementById('stat-open').textContent=open.length;
+  document.getElementById('stat-done').textContent=done.length;
+  document.getElementById('stat-today').textContent=todayAll.length;
+  document.getElementById('stat-articles').textContent=allArticles.length;
+  
+  // Recent orders
+  const el=document.getElementById('recent-orders');
+  const recent=allOrders.slice(0,10);
+  if(!recent.length){el.innerHTML='<div class="empty">📭 Keine Bestellungen</div>';return;}
+  el.innerHTML='<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:10px;">Letzte Bestellungen</div>'+
+    recent.map(o=>orderCard(o)).join('');
+}
+
+// ─── ORDERS ──────────────────────────────────────────────
+function setOrderFilter(f){
+  orderFilter=f;
+  ['all','lager','airside','al','done'].forEach(k=>{
+    document.getElementById('fo-'+k)?.classList.toggle('on',k===f||(k==='al'&&f==='airside_lager'));
+  });
+  renderOrders();
+}
+
+function renderOrders(){
+  const el=document.getElementById('orders-list');
+  const isDone=orderFilter==='done';
+  let filtered=allOrders.filter(o=>{
+    if(isDone) return ['angekommen','fehler'].includes(o.status);
+    if(orderFilter==='all') return !['angekommen','fehler'].includes(o.status);
+    return o.type===orderFilter&&!['angekommen','fehler'].includes(o.status);
+  });
+  if(!filtered.length){el.innerHTML='<div class="empty">📭 Keine Bestellungen</div>';return;}
+  el.innerHTML=filtered.map(o=>orderCard(o)).join('');
+}
+
+function orderCard(o){
+  const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
+  const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-ok',fehler:'b-err'}[o.status]||'b-offen';
+  const typeMap={lager:'📦 Landside→Lager',airside:'✈️ Landside→Airside',airside_lager:'🔄 Airside→Lager'};
+  const typeClass={lager:'t-lager',airside:'t-airside',airside_lager:'t-al'}[o.type]||'t-lager';
+  const preview=o.items.slice(0,2).map(i=>`${i.item||i.name}: ${i.qty}`).join(' · ');
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="card-name">${o.orderer}</div>
+        <div class="card-date">${o.date}</div>
+        <div class="type-tag ${typeClass}">${typeMap[o.type]||o.type}</div>
+      </div>
+      <span class="badge ${sc}">${sl}</span>
+    </div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${preview}</div>
+  </div>`;
+}
+
+// ─── ARTICLES ────────────────────────────────────────────
+function setArticleFilter(f){
+  articleFilter=f;
+  ['all','lager','airside','al'].forEach(k=>{
+    document.getElementById('fa-'+k)?.classList.toggle('on',k===f||(k==='al'&&f==='airside_lager'));
+  });
+  renderArticles();
+}
+
+function renderArticles(){
+  const el=document.getElementById('articles-list');
+  let filtered=allArticles;
+  if(articleFilter!=='all') filtered=allArticles.filter(a=>a.type===articleFilter);
+  
+  if(!filtered.length){el.innerHTML='<div class="empty">📦 Keine Artikel</div>';return;}
+  
+  const sections={};
+  filtered.forEach(a=>{
+    const key=`${a.type}::${a.section}`;
+    if(!sections[key]) sections[key]={type:a.type,section:a.section,items:[]};
+    sections[key].items.push(a);
+  });
+  
+  el.innerHTML=Object.values(sections).map(s=>`
+    <div class="art-section">
+      <div class="art-section-head">${s.section} <span style="font-size:10px;opacity:0.7;">${s.type}</span></div>
+      ${s.items.map(a=>`<div class="art-row">
+        ${a.image_url?`<img class="art-img" src="${a.image_url}">`:'<div class="art-ph">🖼️</div>'}
+        <div style="flex:1;min-width:0;">
+          <div class="art-name">${a.name}</div>
+          <div class="art-unit">${a.unit}</div>
+        </div>
+      </div>`).join('')}
+    </div>`).join('');
+}
+
+// ─── STARTUP ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  const sess=localStorage.getItem('dash_session');
+  const token=localStorage.getItem('dash_token');
+  if(sess&&parseInt(sess)>Date.now()&&token){
+    document.getElementById('login-screen').style.display='none';
+    loadAll();
+  }
+});
+
+// Auto refresh every 30 seconds
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
