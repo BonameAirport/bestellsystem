@@ -215,7 +215,7 @@ async function doLogin(){
     const data=await r.json();
     if(data.access_token){
       localStorage.setItem('dash_token',data.access_token);
-      localStorage.setItem('dash_session',(Date.now()+28800000).toString());
+      localStorage.setItem('dash_session',(Date.now()+30*24*3600000).toString());
       document.getElementById('login-screen').style.display='none';
       loadAll();
     }else{
