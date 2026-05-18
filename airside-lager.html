@@ -872,7 +872,16 @@ async function sendOrder(){
   const name=document.getElementById("oname").value.trim();
   if(!name){ alert("Bitte Namen eintragen."); return; }
   const selected=contacts.filter(c=>selPhones.includes(c.phone));
-  if(!selected.length){ alert("Bitte Empfänger auswählen."); return; }
+  if(!selected.length){
+    // Scroll to recipient and open it
+    const rb=document.getElementById('recipient-body');
+    const rh=document.querySelector('.recipient-box');
+    if(rb&&rb.style.display==='none') rb.style.display='block';
+    if(rh) rh.scrollIntoView({behavior:'smooth',block:'center'});
+    // Flash the recipient box
+    if(rh){ rh.style.border='2px solid #dc2626'; setTimeout(()=>rh.style.border='',2000); }
+    return;
+  }
   const items=Object.values(cart).map(i=>(({item:i.name,qty:String(i.qty),unit:i.unit,delivered:"",section:i.section||""})));
   if(!items.length){ alert("Bitte Artikel auswählen."); return; }
   const note=document.getElementById("note").value.trim();
