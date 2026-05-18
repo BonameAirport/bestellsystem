@@ -233,6 +233,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 <div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;">
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
+  <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
   <button onclick="adminLogout()" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🚪 Logout</button>
 </div>
 
@@ -1254,6 +1255,24 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
 <!-- SCROLL BUTTON -->
 <button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
 
+
+<!-- ARCHIVE MODAL -->
+<div class="admin-modal" id="archive-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">📁 Archiv</span>
+      <button onclick="closeArchiveModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:16px;">Bestellungen exportieren und löschen:</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 30 Tage exportieren & löschen</button>
+      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 3 Monate exportieren & löschen</button>
+      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 1 Jahr exportieren & löschen</button>
+      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles exportieren & löschen</button>
+    </div>
+  </div>
+</div>
+
 </body></html>`;
   const w=window.open('','_blank'); w.document.write(html); w.document.close();
 }
@@ -1716,6 +1735,44 @@ window.addEventListener('scroll',function(){
     btn.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
   }
 });
+
+// ─── ARCHIVE ─────────────────────────────────────────────
+function openArchiveModal(){ document.getElementById("archive-modal").classList.add("on"); }
+function closeArchiveModal(){ document.getElementById("archive-modal").classList.remove("on"); }
+
+async function archiveOrders(days){
+  const label = days===0 ? "alle Bestellungen" : `Bestellungen älter als ${days} Tage`;
+  if(!confirm(`${label} exportieren und löschen?`)) return;
+  
+  // Load orders
+  let query = "?type=eq."+TYPE+"&order=created_at.asc";
+  if(days>0){
+    const cutoff = new Date(Date.now()-days*86400000).toISOString();
+    query += "&created_at=lt."+cutoff;
+  }
+  const orders = await api("GET","orders",query);
+  if(!orders||!orders.length){ alert("Keine Bestellungen gefunden."); return; }
+  
+  // Export as PDF
+  let html = `<html><head><meta charset="UTF-8"/><style>body{font-family:Arial;padding:20px;}h1{color:#14532d;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#14532d;color:white;}</style></head><body>`;
+  html += `<h1>Archiv – ${label}</h1><p>Exportiert am: ${new Date().toLocaleString("de-DE")}</p>`;
+  html += `<table><tr><th>Von</th><th>Datum</th><th>Typ</th><th>Artikel</th><th>Status</th></tr>`;
+  orders.forEach(o=>{
+    html += `<tr><td>${o.orderer}</td><td>${o.date}</td><td>${o.type}</td><td>${o.items.map(i=>`${i.item||i.name}: ${i.qty}`).join(", ")}</td><td>${o.status}</td></tr>`;
+  });
+  html += "</table></body></html>";
+  const w = window.open("","_blank");
+  if(w){ w.document.write(html); w.document.close(); w.print(); }
+  
+  // Delete orders
+  const ids = orders.map(o=>o.id);
+  for(const id of ids){
+    await api("DELETE","orders",`?id=eq.${id}`);
+  }
+  
+  closeArchiveModal();
+  alert(`✅ ${orders.length} Bestellungen exportiert und gelöscht!`);
+}
 </script>
 
 <!-- TEA ADMIN MODAL -->
@@ -1752,6 +1809,24 @@ window.addEventListener('scroll',function(){
 
 <!-- SCROLL BUTTON -->
 <button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
+
+
+<!-- ARCHIVE MODAL -->
+<div class="admin-modal" id="archive-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">📁 Archiv</span>
+      <button onclick="closeArchiveModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:16px;">Bestellungen exportieren und löschen:</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 30 Tage exportieren & löschen</button>
+      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 3 Monate exportieren & löschen</button>
+      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 1 Jahr exportieren & löschen</button>
+      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles exportieren & löschen</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
