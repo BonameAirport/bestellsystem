@@ -156,7 +156,7 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
       <span style="font-size:14px;font-weight:800;color:#7c3aed;" id="del-count">-</span>
     </div>
   </div>
-  <div class="wrap" id="recent-orders"></div>
+  
 </div>
 
 <!-- ORDERS -->
@@ -295,12 +295,6 @@ function renderOverview(){
   // Calculate delivery times
   calcDeliveryTimes(done);
   
-  // Recent orders
-  const el=document.getElementById('recent-orders');
-  const recent=allOrders.slice(0,10);
-  if(!recent.length){el.innerHTML='<div class="empty">📭 Keine Bestellungen</div>';return;}
-  el.innerHTML='<div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:10px;">Letzte Bestellungen</div>'+
-    recent.map(o=>orderCard(o)).join('');
 }
 
 // ─── ORDERS ──────────────────────────────────────────────
