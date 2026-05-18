@@ -243,6 +243,13 @@ async function doLogin(){
     });
     const data=await r.json();
     if(data.access_token){
+      // Check if user is owner
+      const payload=JSON.parse(atob(data.access_token.split('.')[1]));
+      const userId=payload.sub;
+      if(userId!==OWNER_ID){
+        alert('❌ Kein Zugriff auf das Owner Dashboard.');
+        return;
+      }
       localStorage.setItem('dash_token',data.access_token);
       localStorage.setItem('dash_session',(Date.now()+30*24*3600000).toString());
       document.getElementById('login-screen').style.display='none';
