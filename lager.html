@@ -311,6 +311,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 
 <!-- CART MODAL -->
 <div class="modal-overlay" id="cart-modal" onclick="if(event.target===this)closeCart()">
+  <button id="cart-float-close" onclick="closeCart()" style="display:none;position:fixed;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(30,41,59,0.95);border:1px solid #334155;color:white;font-size:18px;cursor:pointer;z-index:200;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);">✕</button>
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -810,8 +811,14 @@ function updateCartUI(){
   document.getElementById("cart-btn").classList.toggle("on",total>0);
 }
 
-function openCart(){ renderCart(); document.getElementById("cart-modal").classList.add("on"); setTimeout(()=>{ const btn=document.querySelector(".send-btn"); if(btn) btn.scrollIntoView({behavior:"smooth",block:"center"}); },100); }
-function closeCart(){ document.getElementById("cart-modal").classList.remove("on"); }
+function openCart(){
+  renderCart();
+  document.getElementById("cart-modal").classList.add("on");
+  const floatBtn=document.getElementById("cart-float-close");
+  if(floatBtn) floatBtn.style.display="flex";
+  setTimeout(()=>{ const btn=document.querySelector(".send-btn"); if(btn) btn.scrollIntoView({behavior:"smooth",block:"center"}); },100);
+}
+function closeCart(){ const fb=document.getElementById("cart-float-close"); if(fb) fb.style.display="none"; document.getElementById("cart-modal").classList.remove("on"); }
 
 function renderCart(){
   const el=document.getElementById("cart-items");
