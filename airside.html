@@ -186,6 +186,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 .art-row.drag-over-top{border-top:3px solid #2563eb !important;}
 .art-row.drag-over-bottom{border-bottom:3px solid #2563eb !important;}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
@@ -1134,60 +1135,41 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
   </div>
 </div>
 
-
-
 <!-- MITARBEITER PAGE -->
 <div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#0f172a;z-index:100;overflow-y:auto;">
-  <!-- Header -->
-  <div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 20px;position:sticky;top:0;z-index:101;border-bottom:1px solid #334155;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="hideMitarbeiterPage()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;width:38px;height:38px;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8592;</button>
-      <div style="flex:1;">
-        <div style="font-size:17px;font-weight:800;color:white;">&#128101; Mitarbeiter</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.6);" id="mit-count">Laedt...</div>
-      </div>
-      <button onclick="loadMitarbeiterPage()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;width:38px;height:38px;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8635;</button>
+  <div id="mit-qr-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:#1e293b;border-radius:20px;padding:28px 24px;width:280px;text-align:center;border:1px solid #334155;">
+      <div style="font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:12px;">QR Code scannen</div>
+      <div id="mit-qr-code" style="margin:0 auto 16px;"></div>
+      <button onclick="document.getElementById('mit-qr-overlay').style.display='none'" style="width:100%;background:#334155;color:#f1f5f9;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Schliessen</button>
     </div>
   </div>
-
-  <div style="padding:16px;max-width:500px;margin:0 auto;">
-
-    <!-- Pending Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
-        <span style="font-size:12px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;">Wartend auf Freischaltung</span>
+  <div style="background:#1e293b;padding:14px 16px;position:sticky;top:0;z-index:101;border-bottom:1px solid #334155;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="hideMitarbeiterPage()" style="background:#334155;border:none;border-radius:10px;width:36px;height:36px;color:#f1f5f9;font-size:18px;cursor:pointer;">&#8592;</button>
+      <div style="flex:1;">
+        <div style="font-size:16px;font-weight:800;color:#f1f5f9;">Mitarbeiter</div>
+        <div style="font-size:11px;color:#64748b;" id="mit-count">Laedt...</div>
       </div>
-      <div id="mit-pending"></div>
+      <button onclick="showMitQR()" style="background:#7c3aed;border:none;border-radius:10px;padding:8px 14px;color:white;font-size:12px;font-weight:700;cursor:pointer;">QR</button>
+      <button onclick="loadMitarbeiterPage()" style="background:#334155;border:none;border-radius:10px;width:36px;height:36px;color:#f1f5f9;font-size:16px;cursor:pointer;">&#8635;</button>
     </div>
-
-    <!-- Admin Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#7c3aed;"></div>
-        <span style="font-size:12px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;">&#9881;&#65039; Admin</span>
-      </div>
-      <div id="mit-admins"></div>
+  </div>
+  <div style="padding:12px 16px;max-width:500px;margin:0 auto;">
+    <div id="mit-pending-section"></div>
+    <div id="mit-admins-section"></div>
+    <div id="mit-besteller-section"></div>
+    <div id="mit-lager-section"></div>
+  </div>
+  <div id="mit-action-sheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;align-items:flex-end;justify-content:center;">
+    <div style="background:#1e293b;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;border-top:1px solid #334155;">
+      <div style="font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:2px;" id="mit-action-name"></div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:16px;" id="mit-action-rolelabel"></div>
+      <button onclick="mitActionEdit()" style="width:100%;background:#1e1b4b;color:#a5b4fc;border:1px solid #3730a3;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;">Name aendern</button>
+      <button onclick="mitActionRole()" style="width:100%;background:#0f2a3d;color:#7dd3fc;border:1px solid #0369a1;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;">Rolle aendern</button>
+      <button onclick="mitActionRemove()" style="width:100%;background:#2d1515;color:#f87171;border:1px solid #7f1d1d;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;text-align:left;">Entfernen</button>
+      <button onclick="closeMitAction()" style="width:100%;background:#334155;color:#94a3b8;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;">Abbrechen</button>
     </div>
-
-    <!-- Besteller Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#2563eb;"></div>
-        <span style="font-size:12px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;">&#128722; Besteller</span>
-      </div>
-      <div id="mit-besteller"></div>
-    </div>
-
-    <!-- Lager Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#16a34a;"></div>
-        <span style="font-size:12px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">&#128230; Lager</span>
-      </div>
-      <div id="mit-lager"></div>
-    </div>
-
   </div>
 </div>
 </body></html>`;
@@ -1752,115 +1734,164 @@ async function loadAppData(){
   if(a&&a.length>0){articles=a;renderArticles();}
 }
 
+// ─── MITARBEITER PAGE ────────────────────────────────────
+var _mitId=null,_mitName='',_mitRole='',_mitQrDone=false;
+var _pendingData={};
 
 function showMitarbeiterPage(){
   document.getElementById('mitarbeiter-page').style.display='block';
+  if(!_mitQrDone){
+    _mitQrDone=true;
+    try{
+      new QRCode(document.getElementById('mit-qr-code'),{
+        text:'https://airport-dus-boname.netlify.app/register.html',width:180,height:180,
+        colorDark:'#7c3aed',colorLight:'#1e293b',
+        correctLevel:QRCode.CorrectLevel.H
+      });
+    }catch(e){}
+  }
   loadMitarbeiterPage();
 }
+
 function hideMitarbeiterPage(){
   document.getElementById('mitarbeiter-page').style.display='none';
 }
+
+function showMitQR(){
+  document.getElementById('mit-qr-overlay').style.display='flex';
+}
+
+function openMitAction(id,name,role){
+  _mitId=id; _mitName=name; _mitRole=role;
+  document.getElementById('mit-action-name').textContent=name;
+  document.getElementById('mit-action-rolelabel').textContent=role;
+  document.getElementById('mit-action-sheet').style.display='flex';
+}
+
+function closeMitAction(){
+  document.getElementById('mit-action-sheet').style.display='none';
+}
+
+async function mitActionEdit(){
+  closeMitAction();
+  const n=prompt('Name aendern:',_mitName);
+  if(n===null||n===_mitName) return;
+  const token=localStorage.getItem('sb_token');
+  const h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({full_name:n})});
+  loadMitarbeiterPage();
+}
+
+async function mitActionRole(){
+  closeMitAction();
+  const r=prompt('Neue Rolle (besteller/lager/admin):',_mitRole);
+  if(!r||!['besteller','lager','admin'].includes(r)) return;
+  const token=localStorage.getItem('sb_token');
+  const h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({role:r})});
+  loadMitarbeiterPage();
+}
+
+async function mitActionRemove(){
+  closeMitAction();
+  if(!confirm(_mitName+' entfernen?')) return;
+  const token=localStorage.getItem('sb_token');
+  const h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'DELETE',headers:h});
+  loadMitarbeiterPage();
+}
+
 async function loadMitarbeiterPage(){
   const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  const h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   const [pending,roles]=await Promise.all([
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers}).then(r=>r.json()).catch(()=>[]),
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=created_at.asc',{headers}).then(r=>r.json()).catch(()=>[])
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(r=>r.json()).catch(()=>[]),
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=full_name.asc',{headers:h}).then(r=>r.json()).catch(()=>[])
   ]);
   const assignedIds=new Set((roles||[]).map(r=>r.user_id));
   const pf=(pending||[]).filter(u=>!assignedIds.has(u.user_id));
-  const total=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1').length;
-  document.getElementById('mit-count').textContent=total+' aktiv  ·  '+pf.length+' wartend';
-
-  // Pending cards
-  const pendingEl=document.getElementById('mit-pending');
-  if(!pf.length){
-    pendingEl.innerHTML='<div style="background:#1e293b;border-radius:12px;padding:14px;color:#64748b;font-size:13px;border:1px solid #334155;">Keine ausstehenden Registrierungen</div>';
-  } else {
-    pendingEl.innerHTML=pf.map(u=>`
-      <div style="background:#1e293b;border-radius:14px;padding:16px;margin-bottom:10px;border:1px solid #f59e0b44;">
-        <div style="font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:2px;">${u.full_name||'Unbekannt'}</div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:12px;">${u.email}</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="mit-role-${u.user_id}" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:9px 12px;font-size:13px;color:#f1f5f9;font-family:inherit;outline:none;">
-            <option value="besteller">Besteller</option>
-            <option value="lager">Lager</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button onclick="mitApprove('${u.user_id}','${u.email}','${u.full_name||u.email}')" style="background:#16a34a;color:white;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap;">&#10003; OK</button>
-          <button onclick="mitDeny('${u.user_id}')" style="background:#dc2626;color:white;border:none;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;">&#10005;</button>
-        </div>
-      </div>`).join('');
-  }
-
-  // User card renderer
-  const renderUser=u=>`
-    <div style="background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div>
-          <div style="font-size:14px;font-weight:800;color:#f1f5f9;">${u.full_name||'Unbekannt'}</div>
-          <div style="font-size:12px;color:#64748b;">${u.email||''}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="mitEdit('${u.id}','${u.full_name||''}')" style="flex:1;background:#1e1b4b;color:#a5b4fc;border:1px solid #3730a3;border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">&#9998; Name</button>
-        <button onclick="mitChangeRole('${u.id}','${u.role}')" style="flex:1;background:#1a2942;color:#7dd3fc;border:1px solid #0369a1;border-radius:10px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">&#8635; Rolle</button>
-        <button onclick="mitRemove('${u.id}','${u.full_name||u.email||''}')" style="background:#2d1515;color:#f87171;border:1px solid #dc2626;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">&#128465;</button>
-      </div>
-    </div>`;
-
   const visible=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1');
-  const empty='<div style="background:#1e293b;border-radius:12px;padding:14px;color:#64748b;font-size:13px;border:1px solid #334155;">Keine Mitarbeiter</div>';
-  
-  document.getElementById('mit-admins').innerHTML=visible.filter(u=>u.role==='admin').map(renderUser).join('')||empty;
-  document.getElementById('mit-besteller').innerHTML=visible.filter(u=>u.role==='besteller').map(renderUser).join('')||empty;
-  document.getElementById('mit-lager').innerHTML=visible.filter(u=>u.role==='lager').map(renderUser).join('')||empty;
-}
-async function mitApprove(userId,email,name){
-  const role=document.getElementById('mit-role-'+userId)?.value||'besteller';
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers,body:JSON.stringify({user_id:userId,role,full_name:name,email})});
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
-  if(role==='lager'){
-    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers,body:JSON.stringify({type:'lager',name,phone:'',user_id:userId})});
-    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers,body:JSON.stringify({type:'airside_lager',name,phone:'',user_id:userId})});
-    alert(name+' freigeschaltet! Bitte Nummer in Kontakte hinzufuegen.');
+  document.getElementById('mit-count').textContent=visible.length+' aktiv, '+pf.length+' wartend';
+  _pendingData={};
+  pf.forEach(u=>{ _pendingData[u.user_id]={email:u.email,name:u.full_name||u.email}; });
+  const ps=document.getElementById('mit-pending-section');
+  if(!pf.length){
+    ps.innerHTML='';
   } else {
-    alert(name+' freigeschaltet als '+role+'!');
+    let html='<div style="margin-bottom:16px;">';
+    html+='<div style="font-size:12px;font-weight:800;color:#f59e0b;letter-spacing:0.5px;margin-bottom:6px;">WARTEND ('+pf.length+')</div>';
+    html+='<div style="background:#1e293b;border-radius:14px;border:1px solid rgba(245,158,11,0.3);overflow:hidden;">';
+    pf.forEach(function(u,i){
+      html+='<div style="padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'">';
+      html+='<div style="font-size:13px;font-weight:700;color:#f1f5f9;">'+(u.full_name||'Unbekannt')+'</div>';
+      html+='<div style="font-size:11px;color:#64748b;margin-bottom:8px;">'+u.email+'</div>';
+      html+='<div style="display:flex;gap:6px;">';
+      html+='<select id="mit-role-'+u.user_id+'" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">';
+      html+='<option value="besteller">Besteller</option><option value="lager">Lager</option><option value="admin">Admin</option>';
+      html+='</select>';
+      html+='<button data-uid="'+u.user_id+'" class="mit-approve-btn" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">OK</button>';
+      html+='<button data-uid="'+u.user_id+'" class="mit-deny-btn" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">X</button>';
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+    ps.innerHTML=html;
+    ps.querySelectorAll('.mit-approve-btn').forEach(function(btn){
+      btn.onclick=function(){
+        var uid=this.dataset.uid;
+        var d=_pendingData[uid];
+        var role=document.getElementById('mit-role-'+uid)&&document.getElementById('mit-role-'+uid).value||'besteller';
+        mitApprove(uid,d.email,d.name,role);
+      };
+    });
+    ps.querySelectorAll('.mit-deny-btn').forEach(function(btn){
+      btn.onclick=function(){mitDeny(this.dataset.uid);};
+    });
   }
+  function renderSec(elId,color,label,users){
+    var el=document.getElementById(elId);
+    if(!users.length){el.innerHTML='';return;}
+    var html='<div style="margin-bottom:16px;">';
+    html+='<div style="font-size:12px;font-weight:800;color:'+color+';letter-spacing:0.5px;margin-bottom:6px;">'+label+' ('+users.length+')</div>';
+    html+='<div style="background:#1e293b;border-radius:14px;border:1px solid #334155;overflow:hidden;">';
+    users.forEach(function(u,i){
+      var name=u.full_name||u.email||'Unbekannt';
+      html+='<div data-id="'+u.id+'" data-name="'+name.replace(/"/g,'&quot;')+'" data-role="'+u.role+'" class="mit-user-row" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'cursor:pointer;">';
+      html+='<span style="font-size:14px;font-weight:600;color:#f1f5f9;">'+name+'</span>';
+      html+='<span style="color:#475569;font-size:20px;">&#8250;</span>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+    el.innerHTML=html;
+    el.querySelectorAll('.mit-user-row').forEach(function(row){
+      row.onclick=function(){openMitAction(this.dataset.id,this.dataset.name,this.dataset.role);};
+    });
+  }
+  renderSec('mit-admins-section','#7c3aed','ADMIN',visible.filter(function(u){return u.role==='admin';}));
+  renderSec('mit-besteller-section','#2563eb','BESTELLER',visible.filter(function(u){return u.role==='besteller';}));
+  renderSec('mit-lager-section','#16a34a','LAGER',visible.filter(function(u){return u.role==='lager';}));
+}
+
+async function mitApprove(userId,email,name,role){
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers:h,body:JSON.stringify({user_id:userId,role:role,full_name:name,email:email})});
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
+  if(role==='lager'){
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'lager',name:name,phone:''})});
+    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'airside_lager',name:name,phone:''})});
+  }
+  alert(name+' freigeschaltet!');
   loadMitarbeiterPage();
 }
+
 async function mitDeny(userId){
-  if(!confirm('Registrierung ablehnen?')) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
+  if(!confirm('Ablehnen?')) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
   loadMitarbeiterPage();
 }
-async function mitChangeRole(roleId,currentRole){
-  const newRole=prompt('Neue Rolle (besteller/lager/admin):',currentRole);
-  if(!newRole||!['besteller','lager','admin'].includes(newRole)) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({role:newRole})});
-  loadMitarbeiterPage();
-}
-async function mitEdit(roleId,currentName){
-  const newName=prompt('Name aendern:',currentName);
-  if(newName===null) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({full_name:newName})});
-  loadMitarbeiterPage();
-}
-async function mitRemove(roleId,name){
-  if(!confirm(name+' entfernen?')) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'DELETE',headers});
-  loadMitarbeiterPage();
-}
+
 </script>
 
 <!-- OH ADMIN MODAL -->
@@ -1917,94 +1948,6 @@ async function mitRemove(roleId,name){
     
     <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
     <div id="users-list-app"></div>
-  </div>
-</div>
-
-<!-- MITARBEITER PAGE -->
-<div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#f1f5f9;z-index:100;overflow-y:auto;">
-  <div style="background:linear-gradient(135deg,#0369a1,#0ea5e9);padding:16px 20px;position:sticky;top:0;z-index:101;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="hideMitarbeiterPage()" style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;width:36px;height:36px;color:white;font-size:20px;cursor:pointer;">&#8592;</button>
-      <div>
-        <div style="font-size:17px;font-weight:800;color:white;">&#128101; Mitarbeiter</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.75);" id="mit-count">Laedt...</div>
-      </div>
-      <button onclick="loadMitarbeiterPage()" style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:6px 12px;color:white;font-size:12px;font-weight:700;cursor:pointer;">&#8635;</button>
-    </div>
-  </div>
-  <div style="padding:14px;max-width:500px;margin:0 auto;">
-    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Wartend auf Freischaltung</div>
-    <div id="mit-pending"></div>
-    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;">Aktive Mitarbeiter</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
-        <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:8px;text-align:center;">Admin</div>
-        <div id="mit-admins"></div>
-      </div>
-      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
-        <div style="font-size:11px;font-weight:800;color:#2563eb;margin-bottom:8px;text-align:center;">Besteller</div>
-        <div id="mit-besteller"></div>
-      </div>
-      <div style="background:white;border-radius:12px;padding:12px;border:1px solid #e2e8f0;">
-        <div style="font-size:11px;font-weight:800;color:#16a34a;margin-bottom:8px;text-align:center;">Lager</div>
-        <div id="mit-lager"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MITARBEITER PAGE -->
-<div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#0f172a;z-index:100;overflow-y:auto;">
-  <!-- Header -->
-  <div style="background:linear-gradient(135deg,#1e1b4b,#3730a3);padding:16px 20px;position:sticky;top:0;z-index:101;border-bottom:1px solid #334155;">
-    <div style="display:flex;align-items:center;gap:12px;">
-      <button onclick="hideMitarbeiterPage()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;width:38px;height:38px;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8592;</button>
-      <div style="flex:1;">
-        <div style="font-size:17px;font-weight:800;color:white;">&#128101; Mitarbeiter</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.6);" id="mit-count">Laedt...</div>
-      </div>
-      <button onclick="loadMitarbeiterPage()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:10px;width:38px;height:38px;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">&#8635;</button>
-    </div>
-  </div>
-
-  <div style="padding:16px;max-width:500px;margin:0 auto;">
-
-    <!-- Pending Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;"></div>
-        <span style="font-size:12px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;">Wartend auf Freischaltung</span>
-      </div>
-      <div id="mit-pending"></div>
-    </div>
-
-    <!-- Admin Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#7c3aed;"></div>
-        <span style="font-size:12px;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:0.5px;">&#9881;&#65039; Admin</span>
-      </div>
-      <div id="mit-admins"></div>
-    </div>
-
-    <!-- Besteller Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#2563eb;"></div>
-        <span style="font-size:12px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:0.5px;">&#128722; Besteller</span>
-      </div>
-      <div id="mit-besteller"></div>
-    </div>
-
-    <!-- Lager Section -->
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:#16a34a;"></div>
-        <span style="font-size:12px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:0.5px;">&#128230; Lager</span>
-      </div>
-      <div id="mit-lager"></div>
-    </div>
-
   </div>
 </div>
 </body>
