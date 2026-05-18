@@ -414,10 +414,17 @@ let currentLang="de";
 // ─── LOGIN ───────────────────────────────────────────────
 function checkSession(){
   const s=localStorage.getItem('app_session');
+  const token=localStorage.getItem('sb_token');
   const screen=document.getElementById('login-screen');
   if(!screen) return;
-  if(s && parseInt(s)>Date.now()) screen.style.display='none';
-  else { localStorage.removeItem('app_session'); screen.style.display='flex'; }
+  if(s && parseInt(s)>Date.now() && token){
+    screen.style.display='none';
+    loadAppData();
+  } else {
+    localStorage.removeItem('app_session');
+    localStorage.removeItem('sb_token');
+    screen.style.display='flex';
+  }
 }
 
 async function checkAppLogin(){
@@ -472,33 +479,8 @@ async function api(method,table,query="",body=null){
 }
 
 // ─── INIT ────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded",async()=>{
+window.addEventListener("DOMContentLoaded",()=>{
   checkSession();
-  loadOpeningHours();
-  const n=getCookie("uname")||localStorage.getItem("uname");
-  if(n) document.getElementById("oname").value=n;
-  if(localStorage.getItem("is_admin")==="1"){
-    isAdmin=true;
-    document.getElementById("tab-stats").style.display="flex";
-    const tb=document.getElementById('admin-toolbar');if(tb) tb.style.display='flex';
-    closeAdmin();
-    const ps=document.getElementById('pdf-export-section');
-    if(ps) ps.style.display='block';
-  }
-  const c=await api("GET","contacts",`?type=eq.${TYPE}&order=created_at.asc`);
-  if(c) contacts=c;
-  renderContacts();
-  if(localStorage.getItem("dark")==="1") applyDark(true);
-  const a=await api("GET","articles",`?type=eq.${TYPE}&order=section.asc,name.asc`);
-  // Load unique categories
-  if(a) categories=[...new Set(a.map(x=>x.section))].filter(Boolean);
-  if(a&&a.length>0){ articles=a; renderArticles(); }
-  else document.getElementById("article-list").innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;">Keine Artikel gefunden</div>';
-  const lang=localStorage.getItem("lang")||"de";
-  currentLang=lang; updateLangUI();
-  // Re-render articles now that dark mode is applied
-  if(articles.length) renderArticles();
-  if(!navigator.onLine) document.getElementById("offline-bar").classList.add("on");
 });
 
 window.addEventListener("offline",()=>document.getElementById("offline-bar").classList.add("on"));
@@ -1772,7 +1754,13 @@ async function archiveOrders(days){
   orders.forEach(o=>{
     html += `<tr><td>${o.orderer}</td><td>${o.date}</td><td>${o.type}</td><td>${o.items.map(i=>`${i.item||i.name}: ${i.qty}`).join(", ")}</td><td>${o.status}</td></tr>`;
   });
-  html += "</table>
+  html += "</table>";
+  const w=window.open("","_blank");
+  if(w){w.document.write(html);w.document.close();w.print();}
+  closeArchiveModal();
+  alert("✅ Exportiert!");
+}
+</script>
 <!-- MITARBEITER MODAL -->
 <div class="admin-modal" id="mitarbeiter-modal">
   <div class="admin-sheet">
@@ -1802,6 +1790,7 @@ async function archiveOrders(days){
   alert(`✅ ${orders.length} Bestellungen exportiert und gelöscht!`);
 }
 
+<script>
 // ─── MITARBEITER MODAL ───────────────────────────────────
 function openMitarbeiterModal(){
   document.getElementById('mitarbeiter-modal').classList.add('on');
