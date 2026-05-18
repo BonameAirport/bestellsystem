@@ -1111,6 +1111,10 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
     <button onclick="saveOpeningHours()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
   </div>
 </div>
+
+<!-- SCROLL BUTTON -->
+<button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
+
 </body></html>`;
   const w=window.open('','_blank'); w.document.write(html); w.document.close();
 }
@@ -1490,6 +1494,19 @@ function openArticleAdmin(){
   document.getElementById("admin-content").style.display="block";
   loadAdminArticles();
 }
+
+// ─── SCROLL BUTTON ───────────────────────────────────────
+window.addEventListener('scroll',function(){
+  const btn=document.getElementById('scroll-btn');
+  if(!btn) return;
+  if(window.scrollY<150){
+    btn.style.display='none';
+  } else {
+    btn.style.display='flex';
+    btn.textContent='↑';
+    btn.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
+  }
+});
 </script>
 
 <!-- OH ADMIN MODAL -->
@@ -1509,6 +1526,10 @@ function openArticleAdmin(){
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
+
+
+<!-- SCROLL BUTTON -->
+<button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
 
 </body>
 </html>
