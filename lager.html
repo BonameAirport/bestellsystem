@@ -235,6 +235,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
   <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
+  <button onclick="openMitarbeiterModal()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">👥 Mitarbeiter</button>
 </div>
 
 <div class="tabs">
@@ -1268,6 +1269,22 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
   </div>
 </div>
 
+
+<!-- MITARBEITER MODAL -->
+<div class="admin-modal" id="mitarbeiter-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
+      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
+    <div id="pending-list-app"></div>
+    
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
+    <div id="users-list-app"></div>
+  </div>
+</div>
 </body></html>`;
   const w=window.open('','_blank'); w.document.write(html); w.document.close();
 }
@@ -1755,7 +1772,23 @@ async function archiveOrders(days){
   orders.forEach(o=>{
     html += `<tr><td>${o.orderer}</td><td>${o.date}</td><td>${o.type}</td><td>${o.items.map(i=>`${i.item||i.name}: ${i.qty}`).join(", ")}</td><td>${o.status}</td></tr>`;
   });
-  html += "</table></body></html>";
+  html += "</table>
+<!-- MITARBEITER MODAL -->
+<div class="admin-modal" id="mitarbeiter-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
+      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
+    <div id="pending-list-app"></div>
+    
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
+    <div id="users-list-app"></div>
+  </div>
+</div>
+</body></html>";
   const w = window.open("","_blank");
   if(w){ w.document.write(html); w.document.close(); w.print(); }
   
@@ -1767,6 +1800,112 @@ async function archiveOrders(days){
   
   closeArchiveModal();
   alert(`✅ ${orders.length} Bestellungen exportiert und gelöscht!`);
+}
+
+// ─── MITARBEITER MODAL ───────────────────────────────────
+function openMitarbeiterModal(){
+  document.getElementById('mitarbeiter-modal').classList.add('on');
+  loadMitarbeiter();
+}
+function closeMitarbeiterModal(){
+  document.getElementById('mitarbeiter-modal').classList.remove('on');
+}
+
+async function loadMitarbeiter(){
+  const pendingEl=document.getElementById('pending-list-app');
+  const usersEl=document.getElementById('users-list-app');
+  if(!pendingEl||!usersEl) return;
+  
+  pendingEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">⏳ Lädt...</div>';
+  usersEl.innerHTML='';
+
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+
+  const [pending,roles]=await Promise.all([
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers}).then(r=>r.json()),
+    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=created_at.asc',{headers}).then(r=>r.json())
+  ]);
+
+  const assignedIds=new Set((roles||[]).map(r=>r.user_id));
+  const pendingFiltered=(pending||[]).filter(u=>!assignedIds.has(u.user_id));
+
+  // Render pending
+  if(!pendingFiltered.length){
+    pendingEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">Keine ausstehenden Registrierungen</div>';
+  } else {
+    pendingEl.innerHTML=pendingFiltered.map(u=>`
+      <div style="background:#fff9f0;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">${u.full_name||''}<br/><span style="font-size:11px;color:#64748b;">${u.email}</span></div>
+        <div style="display:flex;gap:8px;">
+          <select id="app-role-${u.user_id}" style="flex:1;background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px;font-size:12px;font-family:inherit;outline:none;">
+            <option value="besteller">🛒 Besteller</option>
+            <option value="lager">📦 Lager</option>
+            <option value="admin">⚙️ Admin</option>
+          </select>
+          <button onclick="appApproveUser('${u.user_id}','${u.email}')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✅</button>
+          <button onclick="appDenyUser('${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
+        </div>
+      </div>`).join('');
+  }
+
+  // Render active users (exclude owner)
+  const visibleRoles=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1');
+  if(!visibleRoles.length){
+    usersEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">Keine Mitarbeiter</div>';
+  } else {
+    usersEl.innerHTML=visibleRoles.map(u=>{
+      const roleColor={admin:'#7c3aed',besteller:'#2563eb',lager:'#16a34a'}[u.role]||'#64748b';
+      const roleLabel={admin:'⚙️ Admin',besteller:'🛒 Besteller',lager:'📦 Lager'}[u.role]||u.role;
+      return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:13px;font-weight:700;color:#0f172a;">${u.user_id.substring(0,8)}...</span>
+          <span style="background:${roleColor}22;color:${roleColor};padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${roleLabel}</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <select onchange="appChangeRole('${u.id}',this.value)" style="flex:1;background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px;font-size:12px;font-family:inherit;outline:none;">
+            <option value="besteller" ${u.role==='besteller'?'selected':''}>🛒 Besteller</option>
+            <option value="lager" ${u.role==='lager'?'selected':''}>📦 Lager</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
+          </select>
+          <button onclick="appRemoveUser('${u.id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+async function appApproveUser(userId, email){
+  const role=document.getElementById('app-role-'+userId)?.value||'besteller';
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers,body:JSON.stringify({user_id:userId,role})});
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
+  alert('✅ '+email+' freigeschaltet als '+role+'!');
+  loadMitarbeiter();
+}
+
+async function appDenyUser(userId){
+  if(!confirm('Registrierung ablehnen?')) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
+  loadMitarbeiter();
+}
+
+async function appChangeRole(roleId, newRole){
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({role:newRole})});
+  loadMitarbeiter();
+}
+
+async function appRemoveUser(roleId){
+  if(!confirm('Mitarbeiter entfernen?')) return;
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'DELETE',headers});
+  loadMitarbeiter();
 }
 </script>
 
@@ -1823,5 +1962,21 @@ async function archiveOrders(days){
   </div>
 </div>
 
+
+<!-- MITARBEITER MODAL -->
+<div class="admin-modal" id="mitarbeiter-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
+      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    
+    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
+    <div id="pending-list-app"></div>
+    
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
+    <div id="users-list-app"></div>
+  </div>
+</div>
 </body>
 </html>
