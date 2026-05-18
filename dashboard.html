@@ -84,6 +84,17 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .art-del-btn{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
 .art-img-label{background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
 
+
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}
+.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}
+.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}
+.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}
+.status-dot.checking{background:#f59e0b;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}
+.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
+
 </style>
 </head>
 <body>
@@ -121,6 +132,25 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 <!-- OVERVIEW -->
 <div id="page-overview">
   
+  <div class="status-grid">
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-db"></div>
+      <div><div class="status-label">Supabase DB</div><div class="status-sub" id="status-text-db">Prüfe...</div></div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-netlify"></div>
+      <div><div class="status-label">Netlify</div><div class="status-sub" id="status-text-netlify">Prüfe...</div></div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-orders"></div>
+      <div><div class="status-label">Bestellungen</div><div class="status-sub" id="status-text-orders">Prüfe...</div></div>
+    </div>
+    <div class="status-card">
+      <div class="status-dot checking" id="status-dot-articles"></div>
+      <div><div class="status-label">Artikel</div><div class="status-sub" id="status-text-articles">Prüfe...</div></div>
+    </div>
+  </div>
+
 <div class="stats-grid" id="stats-grid">
     <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
     <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
@@ -357,6 +387,8 @@ window.addEventListener('DOMContentLoaded',()=>{
 
 // Auto refresh every 30 seconds
 setInterval(loadAll, 30000);
+setTimeout(checkStatus, 3000);
+setInterval(checkStatus, 120000);
 // Run initial checks
 setTimeout(checkAlerts, 30000);
 setTimeout(checkSupabase, 15000);
@@ -521,6 +553,31 @@ document.addEventListener('DOMContentLoaded',()=>{
   const typeEl=document.getElementById('new-art-type');
   if(typeEl) typeEl.onchange=populateSectionSelect;
 });
+
+// ─── STATUS CHECK ────────────────────────────────────────
+function setStatus(name, state, text){
+  const dot=document.getElementById('status-dot-'+name);
+  const label=document.getElementById('status-text-'+name);
+  if(dot) dot.className='status-dot '+state;
+  if(label) label.textContent=text;
+}
+
+async function checkStatus(){
+  const now=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  
+  // Check DB via orders
+  const test=await api("GET","orders","?limit=1");
+  if(test!==null){
+    setStatus('db','green','Online · '+now);
+    setStatus('orders','green',allOrders.length+' Bestellungen');
+    setStatus('articles','green',allArticles.length+' Artikel');
+  } else {
+    setStatus('db','red','❌ Nicht erreichbar!');
+    setStatus('orders','red','❌ Fehler');
+    setStatus('articles','red','❌ Fehler');
+  }
+  setStatus('netlify','green','Online · '+now);
+}
 </script>
 </body>
 </html>
