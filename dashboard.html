@@ -137,6 +137,25 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
     <div class="stat-card"><div class="stat-num stat-blue" id="stat-today">-</div><div class="stat-label">Heute gesamt</div></div>
     <div class="stat-card"><div class="stat-num stat-purple" id="stat-articles">-</div><div class="stat-label">Artikel gesamt</div></div>
   </div>
+  <div id="delivery-stats" style="display:none;background:#1e293b;border-radius:14px;margin:0 14px 14px;padding:16px;border:1px solid #334155;">
+    <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">⏱️ Lieferzeiten heute</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+      <span style="font-size:13px;color:#94a3b8;">Ø Durchschnitt</span>
+      <span style="font-size:14px;font-weight:800;" id="del-avg">-</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+      <span style="font-size:13px;color:#94a3b8;">⚡ Schnellste</span>
+      <span style="font-size:14px;font-weight:800;color:#16a34a;" id="del-min">-</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
+      <span style="font-size:13px;color:#94a3b8;">🐢 Langsamste</span>
+      <span style="font-size:14px;font-weight:800;color:#dc2626;" id="del-max">-</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
+      <span style="font-size:13px;color:#94a3b8;">✅ Erledigt heute</span>
+      <span style="font-size:14px;font-weight:800;color:#7c3aed;" id="del-count">-</span>
+    </div>
+  </div>
   <div class="wrap" id="recent-orders"></div>
 </div>
 
