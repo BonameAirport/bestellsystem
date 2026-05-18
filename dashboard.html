@@ -669,11 +669,43 @@ const OWNER_ID="dbeecae7-3b37-4c66-91fd-820fe6e55ac1";
 
 async function loadUsers(){
   const el=document.getElementById('users-list');
+  const pendingEl=document.getElementById('pending-list');
   if(!el) return;
   el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">⏳ Lädt...</div>';
-  const roles=await api("GET","user_roles","?order=created_at.asc");
-  if(!roles||!roles.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Keine Benutzer</div>';return;}
-  const visible=roles.filter(u=>u.user_id!==OWNER_ID);
+  
+  // Load pending users from pending_users table
+  try{
+    const roles=await api("GET","user_roles","?order=created_at.asc")||[];
+    const assignedIds=new Set(roles.map(r=>r.user_id));
+    
+    const pendingUsers=await api("GET","pending_users","?order=created_at.desc")||[];
+    const pending=pendingUsers.filter(u=>!assignedIds.has(u.user_id));
+    
+    if(pendingEl){
+      if(!pending.length){
+        pendingEl.innerHTML='<div style="font-size:13px;color:#64748b;padding:8px 0;">Keine ausstehenden Registrierungen</div>';
+      } else {
+        pendingEl.innerHTML=pending.map(u=>`
+          <div style="background:#1e293b;border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid #f59e0b33;">
+            <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">${u.email}</div>
+            <div style="display:flex;gap:8px;">
+              <select id="role-${u.user_id}" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">
+                <option value="besteller">🛒 Besteller</option>
+                <option value="lager">📦 Lager</option>
+                <option value="admin">⚙️ Admin</option>
+              </select>
+              <button onclick="approveUser('${u.user_id}','${u.email}')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Freischalten</button>
+              <button onclick="denyUser('${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
+            </div>
+          </div>`).join('');
+      }
+    }
+  }catch(e){
+    if(pendingEl) pendingEl.innerHTML='<div style="font-size:13px;color:#64748b;">Konnte nicht laden</div>';
+  }
+  
+  const roles2=await api("GET","user_roles","?order=created_at.asc")||[];
+  const visible=roles2.filter(u=>u.user_id!==OWNER_ID);
   el.innerHTML=visible.map(u=>{
     const roleLabel={admin:'⚙️ Admin',besteller:'🛒 Besteller',lager:'📦 Lager'}[u.role]||u.role;
     const roleColor={admin:'#7c3aed',besteller:'#2563eb',lager:'#16a34a'}[u.role]||'#64748b';
@@ -750,6 +782,21 @@ async function resetPassword(email){
     }
   }catch(e){alert('❌ Fehler: '+e.message);}
 }
+
+async function approveUser(userId, email){
+  const role=document.getElementById('role-'+userId)?.value||'besteller';
+  await api("POST","user_roles","",{user_id:userId,role});
+  // Remove from pending
+  await api("DELETE","pending_users","?user_id=eq."+userId);
+  alert('✅ '+email+' wurde freigeschaltet als '+role+'!');
+  loadUsers();
+}
+
+async function denyUser(userId){
+  if(!confirm('Registrierung ablehnen?')) return;
+  await api("DELETE","pending_users","?user_id=eq."+userId);
+  loadUsers();
+}
 </script>
 
 <!-- USERS -->
@@ -766,6 +813,11 @@ async function resetPassword(email){
       </select>
       <button onclick="inviteUser()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Hinzufügen</button>
     </div>
+    <div id="pending-section" style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
+      <div id="pending-list"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">✅ Freigeschaltete Mitarbeiter</div>
     <div id="users-list"></div>
   </div>
 </div>
