@@ -817,7 +817,7 @@ function updateCartUI(){
   document.getElementById("cart-btn").classList.toggle("on",total>0);
 }
 
-function openCart(){ renderCart(); document.getElementById("cart-modal").classList.add("on"); }
+function openCart(){ renderCart(); document.getElementById("cart-modal").classList.add("on"); setTimeout(()=>{ const btn=document.querySelector(".send-btn"); if(btn) btn.scrollIntoView({behavior:"smooth",block:"center"}); },100); }
 function closeCart(){ document.getElementById("cart-modal").classList.remove("on"); }
 
 function renderCart(){
