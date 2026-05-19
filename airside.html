@@ -1475,20 +1475,27 @@ function openArticleAdmin(){
 function openArchiveModal(){document.getElementById("archive-modal").classList.add("on");}
 function closeArchiveModal(){document.getElementById("archive-modal").classList.remove("on");}
 async function archiveOrders(days){
-  var label=days===0?"alle Bestellungen":"Bestellungen aelter als "+days+" Tage";
+  var label=days===0?"alle Bestellungen":"Bestellungen älter als "+days+" Tage";
   if(!confirm(label+" exportieren und loeschen?")) return;
   var query="?type=eq."+TYPE+"&order=created_at.asc";
   if(days>0){var cutoff=new Date(Date.now()-days*86400000).toISOString();query+="&created_at=lt."+cutoff;}
   var orders=await api("GET","orders",query);
   if(!orders||!orders.length){alert("Keine Bestellungen gefunden.");return;}
-  var html="<html><head><meta charset='UTF-8'/></head><body><table border='1'><tr><th>Von</th><th>Datum</th><th>Artikel</th><th>Status</th></tr>";
-  orders.forEach(function(o){html+="<tr><td>"+o.orderer+"</td><td>"+o.date+"</td><td>"+o.items.map(function(i){return(i.item||i.name)+": "+i.qty;}).join(", ")+"</td><td>"+o.status+"</td></tr>";});
-  html+="</table></body></html>";
-  var w=window.open("","_blank");
-  if(w){w.document.write(html);w.document.close();w.print();}
+  var csv="Von,Datum,Artikel,Status\n";
+  orders.forEach(function(o){
+    var items=o.items.map(function(i){return(i.item||i.name)+": "+i.qty;}).join(" | ");
+    csv+='"'+o.orderer+'","'+o.date+'","'+items+'","'+o.status+'"\n';
+  });
+  var blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;
+  a.download="archiv_"+new Date().toLocaleDateString("de-DE").replace(/\./g,"-")+".csv";
+  a.click();
+  URL.revokeObjectURL(url);
   for(var i=0;i<orders.length;i++){await api("DELETE","orders","?id=eq."+orders[i].id);}
   closeArchiveModal();
-  alert("✅ "+orders.length+" Bestellungen exportiert und geloescht!");
+  alert("✅ "+orders.length+" Bestellungen exportiert und gelöscht!");
 }
 </script>
 
@@ -1520,10 +1527,10 @@ async function archiveOrders(days){
     </div>
     <div style="font-size:13px;color:#64748b;margin-bottom:16px;">Bestellungen exportieren und loeschen:</div>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Aelter als 30 Tage</button>
-      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Aelter als 3 Monate</button>
-      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Aelter als 1 Jahr</button>
-      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles loeschen</button>
+      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 30 Tage</button>
+      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 3 Monate</button>
+      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 1 Jahr</button>
+      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles löschen</button>
     </div>
   </div>
 </div>
