@@ -93,7 +93,13 @@ body{font-family:'Sora',sans-serif;background:#f1f5f9;min-height:100vh;padding-b
 
   <div id="tab-bereich">
     <div id="runde-banner"></div>
-    <div class="section-title">Kategorien</div>
+    
+<div id="abschluss-banner" style="display:none;margin:12px 16px;background:linear-gradient(135deg,#052e16,#14532d);border-radius:14px;padding:16px;border:1px solid rgba(22,163,74,0.3);">
+  <div style="font-size:15px;font-weight:800;color:white;margin-bottom:4px;">&#x2705; Inventur abgeschlossen!</div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:12px;" id="abschluss-titel"></div>
+  <button onclick="exportCSV()" style="width:100%;background:#16a34a;color:white;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">&#x1F4E5; CSV exportieren</button>
+</div>
+<div class="section-title">Kategorien</div>
     <div class="kat-list" id="kat-list"></div>
   </div>
 
@@ -222,6 +228,7 @@ async function loadKategorien(){
       '</div>';
   }).join('');
   
+  checkAlleAbgeschlossen();
   el.querySelectorAll('.kat-card').forEach(function(c){
     c.onclick=function(){
       openKategorie(this.dataset.id,this.dataset.name,this.dataset.status,this.dataset.sid);
@@ -431,6 +438,63 @@ window.addEventListener('DOMContentLoaded',function(){
     loadApp();
   }
 });
+
+async function checkAlleAbgeschlossen(){
+  if(!_aktRunde) return;
+  var sessions=await api('GET','inventur_session','?runde_id=eq.'+_aktRunde.id)||[];
+  var abgeschlossen=sessions.filter(function(s){return s.abgeschlossen_at;});
+  var total=_kategorien.length;
+  var banner=document.getElementById('abschluss-banner');
+  if(total>0&&abgeschlossen.length===total){
+    banner.style.display='block';
+    document.getElementById('abschluss-titel').textContent=_aktRunde.titel+' – Alle '+total+' Kategorien fertig';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+async function exportCSV(){
+  if(!_aktRunde) return;
+  var sessions=await api('GET','inventur_session','?runde_id=eq.'+_aktRunde.id)||[];
+  var katMap={};
+  _kategorien.forEach(function(k){katMap[k.id]=k.name;});
+  
+  var rows=[['Kategorie','Artikel','Einheit','Soll','Ist','Differenz','Differenz EUR','Gezaehlt von','Datum']];
+  
+  for(var i=0;i<sessions.length;i++){
+    var s=sessions[i];
+    var positionen=await api('GET','inventur_positionen','?session_id=eq.'+s.id)||[];
+    var katName=katMap[s.kategorie_id]||'Unbekannt';
+    var datum=s.abgeschlossen_at?new Date(s.abgeschlossen_at).toLocaleString('de-DE'):'';
+    positionen.forEach(function(p){
+      var diffEur=p.ek_preis?(p.differenz*parseFloat(p.ek_preis)).toFixed(2):'';
+      rows.push([
+        katName,
+        p.artikel_name||'',
+        '',
+        p.soll_bestand||0,
+        p.ist_bestand||0,
+        p.differenz||0,
+        diffEur,
+        s.mitarbeiter_name||'',
+        datum
+      ]);
+    });
+  }
+  
+  var csv=rows.map(function(r){
+    return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');
+  }).join('\n');
+  
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='inventur_'+_aktRunde.titel.replace(/ /g,'_')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 </script>
 </body>
 </html>
