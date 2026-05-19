@@ -54,7 +54,7 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .note-box{background:#1e3a5f;border-radius:10px;padding:12px;margin-bottom:10px;font-size:13px;color:#93c5fd;}
 .empty{text-align:center;padding:50px 20px;color:#64748b;font-size:14px;}
 .loading{text-align:center;padding:50px 20px;color:#64748b;}
-.refresh-btn{position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:#16a34a;border:none;color:white;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:50;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
+.refresh-btn{position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:#16a34a;border:none;color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:50;}
 </style>
 </head>
 <body>
@@ -280,7 +280,10 @@ async function updateStatus(id,status){
 
 window.addEventListener('DOMContentLoaded',loadOrders);
 setInterval(updateTimers,30000);
-
+setInterval(async()=>{
+  const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
+  if(data) allOrders=data;
+},30000);
 
 function checkDelivered(key, ordered){
   const inp=document.getElementById('del-'+key);
@@ -375,41 +378,6 @@ function updateTimers(){
     el.style.background=bg;
   });
 }
-
-
-
-
-
-// ─── REMINDERS ───────────────────────────────────────────
-let remindersSent = {};
-
-function checkReminders(){
-  const now = Date.now();
-  const twentyMin = 20 * 60 * 1000;
-  const tenMin = 10 * 60 * 1000;
-
-  allOrders.forEach(o=>{
-    if(['angekommen','fehler','unterwegs'].includes(o.status)) return;
-    const created = new Date(o.created_at).getTime();
-    const elapsed = now - created;
-    if(elapsed < twentyMin) return;
-
-    if(!remindersSent[o.id]) remindersSent[o.id] = {count:0, lastSent:0};
-    const r = remindersSent[o.id];
-    const firstReminder = r.count === 0 && elapsed >= twentyMin;
-    const repeatReminder = r.count > 0 && (now - r.lastSent) >= tenMin;
-
-    if(firstReminder || repeatReminder){
-      r.count++;
-      r.lastSent = now;
-      const contacts = o.contacts || [];
-      const msg = `⏰ *ERINNERUNG - OFFENE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${o.date}\n\nDiese Bestellung wartet seit ${Math.floor(elapsed/60000)} Minuten!\nBitte bestätigen. 👆`;
-      contacts.forEach((c,i)=>setTimeout(()=>window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank'),i*800));
-    }
-  });
-}
-
-setInterval(checkReminders, 60000);
 </script>
 </body>
 </html>

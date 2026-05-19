@@ -186,7 +186,6 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 .art-row.drag-over-top{border-top:3px solid #2563eb !important;}
 .art-row.drag-over-bottom{border-bottom:3px solid #2563eb !important;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
@@ -231,11 +230,9 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 
 <!-- ADMIN TOOLBAR -->
 <div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;">
-  <button onclick="adminLogout()" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🚪</button>
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
-  <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
-  <button onclick="showMitarbeiterPage()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">👥 Mitarbeiter</button>
+  <button onclick="adminLogout()" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🚪 Logout</button>
 </div>
 
 <div class="tabs">
@@ -313,12 +310,11 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 
 <!-- CART MODAL -->
 <div class="modal-overlay" id="cart-modal" onclick="if(event.target===this)closeCart()">
-  <button id="cart-float-close" onclick="closeCart()" style="display:none;position:fixed;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(30,41,59,0.95);border:1px solid #334155;color:white;font-size:18px;cursor:pointer;z-index:200;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);">✕</button>
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <div style="font-size:18px;font-weight:800;color:#0f172a;" id="lbl-cart">🛒 Warenkorb</div>
-      
+      <button onclick="closeCart()" style="width:34px;height:34px;border-radius:50%;background:#f1f5f9;border:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
     </div>
     <div id="cart-items"></div>
     <button class="send-btn" onclick="sendOrder()">
@@ -404,7 +400,7 @@ const H={"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"applic
 const TYPE="airside";
 const PIN="2802";
 const SESSION_HOURS=8;
-const RATE_LIMIT=40;
+const RATE_LIMIT=10;
 let contacts=[],selPhones=[],cart={},articles=[],allOrders=[],statFilter="week",isAdmin=false,categories=[];
 let loginAttempts=parseInt(localStorage.getItem('login_attempts')||'0');
 let lockUntil=parseInt(localStorage.getItem('lock_until')||'0');
@@ -414,17 +410,10 @@ let currentLang="de";
 // ─── LOGIN ───────────────────────────────────────────────
 function checkSession(){
   const s=localStorage.getItem('app_session');
-  const token=localStorage.getItem('sb_token');
   const screen=document.getElementById('login-screen');
   if(!screen) return;
-  if(s && parseInt(s)>Date.now() && token){
-    screen.style.display='none';
-    loadAppData();
-  } else {
-    localStorage.removeItem('app_session');
-    localStorage.removeItem('sb_token');
-    screen.style.display='flex';
-  }
+  if(s && parseInt(s)>Date.now()) screen.style.display='none';
+  else { localStorage.removeItem('app_session'); screen.style.display='flex'; }
 }
 
 async function checkAppLogin(){
@@ -479,8 +468,33 @@ async function api(method,table,query="",body=null){
 }
 
 // ─── INIT ────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded",()=>{
+window.addEventListener("DOMContentLoaded",async()=>{
   checkSession();
+  loadOpeningHours();
+  const n=getCookie("uname")||localStorage.getItem("uname");
+  if(n) document.getElementById("oname").value=n;
+  if(localStorage.getItem("is_admin")==="1"){
+    isAdmin=true;
+    document.getElementById("tab-stats").style.display="flex";
+    const tb=document.getElementById('admin-toolbar');if(tb) tb.style.display='flex';
+    closeAdmin();
+    const ps=document.getElementById('pdf-export-section');
+    if(ps) ps.style.display='block';
+  }
+  const c=await api("GET","contacts",`?type=eq.${TYPE}&order=created_at.asc`);
+  if(c) contacts=c;
+  renderContacts();
+  if(localStorage.getItem("dark")==="1") applyDark(true);
+  const a=await api("GET","articles",`?type=eq.${TYPE}&order=section.asc,name.asc`);
+  // Load unique categories
+  if(a) categories=[...new Set(a.map(x=>x.section))].filter(Boolean);
+  if(a&&a.length>0){ articles=a; renderArticles(); }
+  else document.getElementById("article-list").innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;">Keine Artikel gefunden</div>';
+  const lang=localStorage.getItem("lang")||"de";
+  currentLang=lang; updateLangUI();
+  // Re-render articles now that dark mode is applied
+  if(articles.length) renderArticles();
+  if(!navigator.onLine) document.getElementById("offline-bar").classList.add("on");
 });
 
 window.addEventListener("offline",()=>document.getElementById("offline-bar").classList.add("on"));
@@ -674,14 +688,8 @@ function updateCartUI(){
   document.getElementById("cart-btn").classList.toggle("on",total>0);
 }
 
-function openCart(){
-  renderCart();
-  document.getElementById("cart-modal").classList.add("on");
-  const floatBtn=document.getElementById("cart-float-close");
-  if(floatBtn) floatBtn.style.display="flex";
-  setTimeout(()=>{ const btn=document.querySelector(".send-btn"); if(btn) btn.scrollIntoView({behavior:"smooth",block:"center"}); },100);
-}
-function closeCart(){ const fb=document.getElementById("cart-float-close"); if(fb) fb.style.display="none"; document.getElementById("cart-modal").classList.remove("on"); }
+function openCart(){ renderCart(); document.getElementById("cart-modal").classList.add("on"); }
+function closeCart(){ document.getElementById("cart-modal").classList.remove("on"); }
 
 function renderCart(){
   const el=document.getElementById("cart-items");
@@ -728,20 +736,7 @@ async function sendOrder(){
   const name=document.getElementById("oname").value.trim();
   if(!name){ alert("Bitte Namen eintragen."); return; }
   const selected=contacts.filter(c=>selPhones.includes(c.phone));
-  if(!selected.length){
-    closeCart();
-    setTimeout(()=>{
-      const rb=document.getElementById('recipient-body');
-      const rh=document.getElementById('recipient-section');
-      if(rb) rb.style.display='block';
-      const scrollTarget=rb||document.getElementById('contact-list');
-      if(scrollTarget) scrollTarget.scrollIntoView({behavior:'smooth',block:'center'});
-      // Flash red border on contact list
-      const cl=document.getElementById('contact-list');
-      if(cl){ cl.style.border='2px solid #dc2626'; cl.style.borderRadius='8px'; setTimeout(()=>{ cl.style.border=''; },2000); }
-    },300);
-    return;
-  }
+  if(!selected.length){ alert("Bitte Empfänger auswählen."); return; }
   const items=Object.values(cart).map(i=>(({item:i.name,qty:String(i.qty),unit:i.unit,delivered:"",section:i.section||""})));
   if(!items.length){ alert("Bitte Artikel auswählen."); return; }
   const note=document.getElementById("note").value.trim();
@@ -1094,79 +1089,6 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
     </div>
     <div id="oh-admin-content"></div>
     <button onclick="saveOpeningHours()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
-  </div>
-</div>
-
-<!-- SCROLL BUTTON -->
-<button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
-
-
-<!-- ARCHIVE MODAL -->
-<div class="admin-modal" id="archive-modal">
-  <div class="admin-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#0f172a;">📁 Archiv</span>
-      <button onclick="closeArchiveModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    <div style="font-size:13px;color:#64748b;margin-bottom:16px;">Bestellungen exportieren und löschen:</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 30 Tage exportieren & löschen</button>
-      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 3 Monate exportieren & löschen</button>
-      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 1 Jahr exportieren & löschen</button>
-      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles exportieren & löschen</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- MITARBEITER MODAL -->
-<div class="admin-modal" id="mitarbeiter-modal">
-  <div class="admin-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
-      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    
-    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
-    <div id="pending-list-app"></div>
-    
-    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
-    <div id="users-list-app"></div>
-  </div>
-</div>
-
-<!-- MITARBEITER PAGE -->
-<div id="mitarbeiter-page" style="display:none;position:fixed;inset:0;background:#0f172a;z-index:100;overflow-y:auto;">
-  <div id="mit-qr-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;">
-    <div style="background:#1e293b;border-radius:20px;padding:28px 24px;width:280px;text-align:center;border:1px solid #334155;">
-      <div style="font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:12px;">QR Code scannen</div>
-      <div id="mit-qr-code" style="margin:0 auto 16px;"></div>
-      <button onclick="document.getElementById('mit-qr-overlay').style.display='none'" style="width:100%;background:#334155;color:#f1f5f9;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Schliessen</button>
-    </div>
-  </div>
-  <div style="background:#1e293b;padding:14px 16px;position:sticky;top:0;z-index:101;border-bottom:1px solid #334155;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button onclick="hideMitarbeiterPage()" style="background:#334155;border:none;border-radius:10px;width:36px;height:36px;color:#f1f5f9;font-size:18px;cursor:pointer;">&#8592;</button>
-      <div style="flex:1;"><div style="font-size:16px;font-weight:800;color:#f1f5f9;">Mitarbeiter</div><div style="font-size:11px;color:#64748b;" id="mit-count">Laedt...</div></div>
-      <button onclick="showMitQR()" style="background:#7c3aed;border:none;border-radius:10px;padding:8px 14px;color:white;font-size:12px;font-weight:700;cursor:pointer;">QR</button>
-      <button onclick="loadMitarbeiterPage()" style="background:#334155;border:none;border-radius:10px;width:36px;height:36px;color:#f1f5f9;font-size:16px;cursor:pointer;">&#8635;</button>
-    </div>
-  </div>
-  <div style="padding:12px 16px;max-width:500px;margin:0 auto;">
-    <div id="mit-pending-section"></div>
-    <div id="mit-admins-section"></div>
-    <div id="mit-besteller-section"></div>
-    <div id="mit-lager-section"></div>
-  </div>
-  <div id="mit-action-sheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;align-items:flex-end;justify-content:center;">
-    <div style="background:#1e293b;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;border-top:1px solid #334155;">
-      <div style="font-size:14px;font-weight:800;color:#f1f5f9;margin-bottom:2px;" id="mit-action-name"></div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:16px;" id="mit-action-rolelabel"></div>
-      <button onclick="mitActionEdit()" style="width:100%;background:#1e1b4b;color:#a5b4fc;border:1px solid #3730a3;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;">Name aendern</button>
-      <button onclick="mitActionRole()" style="width:100%;background:#0f2a3d;color:#7dd3fc;border:1px solid #0369a1;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;">Rolle aendern</button>
-      <button onclick="mitActionRemove()" style="width:100%;background:#2d1515;color:#f87171;border:1px solid #7f1d1d;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;text-align:left;">Entfernen</button>
-      <button onclick="closeMitAction()" style="width:100%;background:#334155;color:#94a3b8;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;">Abbrechen</button>
-    </div>
   </div>
 </div>
 </body></html>`;
@@ -1548,321 +1470,6 @@ function openArticleAdmin(){
   document.getElementById("admin-content").style.display="block";
   loadAdminArticles();
 }
-
-// ─── SCROLL BUTTON ───────────────────────────────────────
-window.addEventListener('scroll',function(){
-  const btn=document.getElementById('scroll-btn');
-  if(!btn) return;
-  if(window.scrollY<150){
-    btn.style.display='none';
-  } else {
-    btn.style.display='flex';
-    btn.textContent='↑';
-    btn.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};
-  }
-});
-
-// ─── ARCHIVE ─────────────────────────────────────────────
-function openArchiveModal(){ document.getElementById("archive-modal").classList.add("on"); }
-function closeArchiveModal(){ document.getElementById("archive-modal").classList.remove("on"); }
-
-async function archiveOrders(days){
-  const label = days===0 ? "alle Bestellungen" : `Bestellungen älter als ${days} Tage`;
-  if(!confirm(`${label} exportieren und löschen?`)) return;
-  
-  // Load orders
-  let query = "?type=eq."+TYPE+"&order=created_at.asc";
-  if(days>0){
-    const cutoff = new Date(Date.now()-days*86400000).toISOString();
-    query += "&created_at=lt."+cutoff;
-  }
-  const orders = await api("GET","orders",query);
-  if(!orders||!orders.length){ alert("Keine Bestellungen gefunden."); return; }
-  
-  // Export as PDF
-  let html = `<html><head><meta charset="UTF-8"/><style>body{font-family:Arial;padding:20px;}h1{color:#14532d;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;font-size:12px;}th{background:#14532d;color:white;}</style></head><body>`;
-  html += `<h1>Archiv – ${label}</h1><p>Exportiert am: ${new Date().toLocaleString("de-DE")}</p>`;
-  html += `<table><tr><th>Von</th><th>Datum</th><th>Typ</th><th>Artikel</th><th>Status</th></tr>`;
-  orders.forEach(o=>{
-    html += `<tr><td>${o.orderer}</td><td>${o.date}</td><td>${o.type}</td><td>${o.items.map(i=>`${i.item||i.name}: ${i.qty}`).join(", ")}</td><td>${o.status}</td></tr>`;
-  });
-  html += "</table>";
-  const w=window.open("","_blank");
-  if(w){w.document.write(html);w.document.close();w.print();}
-  closeArchiveModal();
-  alert("✅ Exportiert!");
-}
-
-// MITARBEITER PAGE
-var _mitId=null,_mitName='',_mitRole='',_mitQrDone=false,_pendingData={};
-function showMitarbeiterPage(){
-  document.getElementById('mitarbeiter-page').style.display='block';
-  if(!_mitQrDone){_mitQrDone=true;try{new QRCode(document.getElementById('mit-qr-code'),{text:'https://airport-dus-boname.netlify.app/register.html',width:180,height:180,colorDark:'#7c3aed',colorLight:'#1e293b',correctLevel:QRCode.CorrectLevel.H});}catch(e){}}
-  loadMitarbeiterPage();
-}
-function hideMitarbeiterPage(){document.getElementById('mitarbeiter-page').style.display='none';}
-function showMitQR(){document.getElementById('mit-qr-overlay').style.display='flex';}
-function openMitAction(id,name,role){
-  _mitId=id;_mitName=name;_mitRole=role;
-  document.getElementById('mit-action-name').textContent=name;
-  document.getElementById('mit-action-rolelabel').textContent=role;
-  document.getElementById('mit-action-sheet').style.display='flex';
-}
-function closeMitAction(){document.getElementById('mit-action-sheet').style.display='none';}
-async function mitActionEdit(){
-  closeMitAction();
-  var n=prompt('Name aendern:',_mitName);
-  if(n===null||n===_mitName)return;
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({full_name:n})});
-  loadMitarbeiterPage();
-}
-async function mitActionRole(){
-  closeMitAction();
-  var r=prompt('Neue Rolle (besteller/lager/admin):',_mitRole);
-  if(!r||!['besteller','lager','admin'].includes(r))return;
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'PATCH',headers:h,body:JSON.stringify({role:r})});
-  loadMitarbeiterPage();
-}
-async function mitActionRemove(){
-  closeMitAction();
-  if(!confirm(_mitName+' entfernen?'))return;
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+_mitId,{method:'DELETE',headers:h});
-  loadMitarbeiterPage();
-}
-async function loadMitarbeiterPage(){
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
-  var results=await Promise.all([
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];}),
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=full_name.asc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];})
-  ]);
-  var pending=results[0]||[];
-  var roles=results[1]||[];
-  var assignedIds=new Set(roles.map(function(r){return r.user_id;}));
-  var pf=pending.filter(function(u){return !assignedIds.has(u.user_id);});
-  var visible=roles.filter(function(u){return u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1';});
-  document.getElementById('mit-count').textContent=visible.length+' aktiv, '+pf.length+' wartend';
-  _pendingData={};
-  pf.forEach(function(u){_pendingData[u.user_id]={email:u.email,name:u.full_name||u.email};});
-  var ps=document.getElementById('mit-pending-section');
-  if(!pf.length){
-    ps.innerHTML='';
-  } else {
-    var html='<div style="margin-bottom:16px;">';
-    html+='<div style="font-size:12px;font-weight:800;color:#f59e0b;letter-spacing:0.5px;margin-bottom:6px;">WARTEND ('+pf.length+')</div>';
-    html+='<div style="background:#1e293b;border-radius:14px;border:1px solid rgba(245,158,11,0.3);overflow:hidden;">';
-    pf.forEach(function(u,i){
-      html+='<div style="padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'">';
-      html+='<div style="font-size:13px;font-weight:700;color:#f1f5f9;">'+(u.full_name||'Unbekannt')+'</div>';
-      html+='<div style="font-size:11px;color:#64748b;margin-bottom:8px;">'+u.email+'</div>';
-      html+='<div style="display:flex;gap:6px;">';
-      html+='<select id="mit-role-'+u.user_id+'" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">';
-      html+='<option value="besteller">Besteller</option><option value="lager">Lager</option><option value="admin">Admin</option>';
-      html+='</select>';
-      html+='<button data-uid="'+u.user_id+'" class="mit-approve-btn" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">OK</button>';
-      html+='<button data-uid="'+u.user_id+'" class="mit-deny-btn" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">X</button>';
-      html+='</div></div>';
-    });
-    html+='</div></div>';
-    ps.innerHTML=html;
-    ps.querySelectorAll('.mit-approve-btn').forEach(function(btn){
-      btn.onclick=function(){
-        var uid=this.dataset.uid;
-        var d=_pendingData[uid];
-        var sel=document.getElementById('mit-role-'+uid);
-        mitApprove(uid,d.email,d.name,sel?sel.value:'besteller');
-      };
-    });
-    ps.querySelectorAll('.mit-deny-btn').forEach(function(btn){
-      btn.onclick=function(){mitDeny(this.dataset.uid);};
-    });
-  }
-  function renderSec(elId,color,label,users){
-    var el=document.getElementById(elId);
-    if(!users.length){el.innerHTML='';return;}
-    var html='<div style="margin-bottom:16px;">';
-    html+='<div style="font-size:12px;font-weight:800;color:'+color+';letter-spacing:0.5px;margin-bottom:6px;">'+label+' ('+users.length+')</div>';
-    html+='<div style="background:#1e293b;border-radius:14px;border:1px solid #334155;overflow:hidden;">';
-    users.forEach(function(u,i){
-      var name=u.full_name||u.email||'Unbekannt';
-      html+='<div data-id="'+u.id+'" data-name="'+name.replace(/"/g,'&quot;')+'" data-role="'+u.role+'" class="mit-user-row" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;'+(i>0?'border-top:1px solid #334155;':'')+'cursor:pointer;">';
-      html+='<span style="font-size:14px;font-weight:600;color:#f1f5f9;">'+name+'</span>';
-      html+='<span style="color:#475569;font-size:20px;">&#8250;</span></div>';
-    });
-    html+='</div></div>';
-    el.innerHTML=html;
-    el.querySelectorAll('.mit-user-row').forEach(function(row){
-      row.onclick=function(){openMitAction(this.dataset.id,this.dataset.name,this.dataset.role);};
-    });
-  }
-  renderSec('mit-admins-section','#7c3aed','ADMIN',visible.filter(function(u){return u.role==='admin';}));
-  renderSec('mit-besteller-section','#2563eb','BESTELLER',visible.filter(function(u){return u.role==='besteller';}));
-  renderSec('mit-lager-section','#16a34a','LAGER',visible.filter(function(u){return u.role==='lager';}));
-}
-async function mitApprove(userId,email,name,role){
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers:h,body:JSON.stringify({user_id:userId,role:role,full_name:name,email:email})});
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
-  if(role==='lager'){
-    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'lager',name:name,phone:''})});
-    await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/contacts',{method:'POST',headers:h,body:JSON.stringify({type:'airside_lager',name:name,phone:''})});
-  }
-  alert(name+' freigeschaltet!');
-  loadMitarbeiterPage();
-}
-async function mitDeny(userId){
-  if(!confirm('Ablehnen?'))return;
-  var token=localStorage.getItem('sb_token');
-  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers:h});
-  loadMitarbeiterPage();
-}
-
-</script>
-<!-- MITARBEITER MODAL -->
-<div class="admin-modal" id="mitarbeiter-modal">
-  <div class="admin-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
-      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    
-    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
-    <div id="pending-list-app"></div>
-    
-    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
-    <div id="users-list-app"></div>
-  </div>
-</div>
-<script>
-// ─── MITARBEITER MODAL ───────────────────────────────────
-function openMitarbeiterModal(){
-  document.getElementById('mitarbeiter-modal').classList.add('on');
-  loadMitarbeiter();
-}
-function closeMitarbeiterModal(){
-  document.getElementById('mitarbeiter-modal').classList.remove('on');
-}
-
-async function loadMitarbeiter(){
-  const pendingEl=document.getElementById('pending-list-app');
-  const usersEl=document.getElementById('users-list-app');
-  if(!pendingEl||!usersEl) return;
-  
-  pendingEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">⏳ Lädt...</div>';
-  usersEl.innerHTML='';
-
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
-
-  const [pending,roles]=await Promise.all([
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers}).then(r=>r.json()),
-    fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?order=created_at.asc',{headers}).then(r=>r.json())
-  ]);
-
-  const assignedIds=new Set((roles||[]).map(r=>r.user_id));
-  const pendingFiltered=(pending||[]).filter(u=>!assignedIds.has(u.user_id));
-
-  // Render pending
-  if(!pendingFiltered.length){
-    pendingEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">Keine ausstehenden Registrierungen</div>';
-  } else {
-    pendingEl.innerHTML=pendingFiltered.map(u=>`
-      <div style="background:#fff9f0;border:1px solid #fed7aa;border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px;">${u.full_name||''}<br/><span style="font-size:11px;color:#64748b;">${u.email}</span></div>
-        <div style="display:flex;gap:8px;">
-          <select id="app-role-${u.user_id}" style="flex:1;background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px;font-size:12px;font-family:inherit;outline:none;">
-            <option value="besteller">🛒 Besteller</option>
-            <option value="lager">📦 Lager</option>
-            <option value="admin">⚙️ Admin</option>
-          </select>
-          <button onclick="appApproveUser('${u.user_id}','${u.email}')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✅</button>
-          <button onclick="appDenyUser('${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
-        </div>
-      </div>`).join('');
-  }
-
-  // Render active users (exclude owner)
-  const visibleRoles=(roles||[]).filter(u=>u.user_id!=='dbeecae7-3b37-4c66-91fd-820fe6e55ac1');
-  if(!visibleRoles.length){
-    usersEl.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">Keine Mitarbeiter</div>';
-  } else {
-    usersEl.innerHTML=visibleRoles.map(u=>{
-      const roleColor={admin:'#7c3aed',besteller:'#2563eb',lager:'#16a34a'}[u.role]||'#64748b';
-      const roleLabel={admin:'⚙️ Admin',besteller:'🛒 Besteller',lager:'📦 Lager'}[u.role]||u.role;
-      return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:13px;font-weight:700;color:#0f172a;">${u.user_id.substring(0,8)}...</span>
-          <span style="background:${roleColor}22;color:${roleColor};padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${roleLabel}</span>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <select onchange="appChangeRole('${u.id}',this.value)" style="flex:1;background:white;border:1.5px solid #e2e8f0;border-radius:8px;padding:6px;font-size:12px;font-family:inherit;outline:none;">
-            <option value="besteller" ${u.role==='besteller'?'selected':''}>🛒 Besteller</option>
-            <option value="lager" ${u.role==='lager'?'selected':''}>📦 Lager</option>
-            <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
-          </select>
-          <button onclick="appRemoveUser('${u.id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
-        </div>
-      </div>`;
-    }).join('');
-  }
-}
-
-async function appApproveUser(userId, email){
-  const role=document.getElementById('app-role-'+userId)?.value||'besteller';
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles',{method:'POST',headers,body:JSON.stringify({user_id:userId,role})});
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
-  alert('✅ '+email+' freigeschaltet als '+role+'!');
-  loadMitarbeiter();
-}
-
-async function appDenyUser(userId){
-  if(!confirm('Registrierung ablehnen?')) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId,{method:'DELETE',headers});
-  loadMitarbeiter();
-}
-
-async function appChangeRole(roleId, newRole){
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'PATCH',headers,body:JSON.stringify({role:newRole})});
-  loadMitarbeiter();
-}
-
-async function appRemoveUser(roleId){
-  if(!confirm('Mitarbeiter entfernen?')) return;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'return=minimal'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/user_roles?id=eq.'+roleId,{method:'DELETE',headers});
-  loadMitarbeiter();
-}
-
-async function loadAppData(){
-  document.getElementById('login-screen').style.display='none';
-  const n=getCookie('uname')||localStorage.getItem('uname');
-  if(n) document.getElementById('oname').value=n;
-  if(localStorage.getItem('is_admin')==='1'){
-    isAdmin=true;
-    const tb=document.getElementById('admin-toolbar');
-    if(tb) tb.style.display='flex';
-  }
-  loadOpeningHours();
-  const ct=await api('GET','contacts','?type=eq.'+TYPE+'&order=created_at.asc');
-  if(ct){contacts=ct;renderContacts();}
-  const a=await api('GET','articles','?type=eq.'+TYPE+'&order=section.asc,name.asc');
-  if(a&&a.length>0){articles=a;renderArticles();}
-}
 </script>
 
 <!-- OH ADMIN MODAL -->
@@ -1883,43 +1490,5 @@ async function loadAppData(){
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
 
-
-<!-- SCROLL BUTTON -->
-<button id="scroll-btn" style="display:none;position:fixed;right:-2px;top:50%;transform:translateY(-50%);width:28px;height:48px;border-radius:8px 0 0 8px;background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.1);border-right:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;z-index:60;align-items:center;justify-content:center;backdrop-filter:blur(4px);">↑</button>
-
-
-<!-- ARCHIVE MODAL -->
-<div class="admin-modal" id="archive-modal">
-  <div class="admin-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#0f172a;">📁 Archiv</span>
-      <button onclick="closeArchiveModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    <div style="font-size:13px;color:#64748b;margin-bottom:16px;">Bestellungen exportieren und löschen:</div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <button onclick="archiveOrders(30)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 30 Tage exportieren & löschen</button>
-      <button onclick="archiveOrders(90)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 3 Monate exportieren & löschen</button>
-      <button onclick="archiveOrders(365)" style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;">📄 Älter als 1 Jahr exportieren & löschen</button>
-      <button onclick="archiveOrders(0)" style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;color:#dc2626;">🗑️ Alles exportieren & löschen</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- MITARBEITER MODAL -->
-<div class="admin-modal" id="mitarbeiter-modal">
-  <div class="admin-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#0f172a;">👥 Mitarbeiter</span>
-      <button onclick="closeMitarbeiterModal()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
-    </div>
-    
-    <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
-    <div id="pending-list-app"></div>
-    
-    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">✅ Aktive Mitarbeiter</div>
-    <div id="users-list-app"></div>
-  </div>
-</div>
 </body>
 </html>
