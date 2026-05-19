@@ -6,45 +6,46 @@
 <title>Bestellsystem – Flughafen Restaurant</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Sora', sans-serif;
-    background: linear-gradient(135deg, #0f2d52 0%, #1a3a6b 50%, #14532d 100%);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 30px 20px;
-  }
-  .logo { font-size: 48px; margin-bottom: 12px; }
-  h1 { color: white; font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 6px; }
-  .sub { color: #93c5fd; font-size: 13px; text-align: center; margin-bottom: 40px; letter-spacing: 1px; text-transform: uppercase; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:linear-gradient(135deg,#0f2d52 0%,#1a3a6b 50%,#14532d 100%);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;}
+.logo{font-size:48px;margin-bottom:12px;}
+h1{color:white;font-size:24px;font-weight:800;text-align:center;margin-bottom:6px;}
+.sub{color:#93c5fd;font-size:13px;text-align:center;margin-bottom:40px;letter-spacing:1px;text-transform:uppercase;}
+.cards{display:flex;flex-direction:column;gap:16px;width:100%;max-width:360px;}
+.card{background:white;border-radius:18px;padding:24px 22px;text-decoration:none;display:flex;align-items:center;gap:18px;box-shadow:0 8px 30px rgba(0,0,0,0.25);transition:transform .18s;}
+.card:active{transform:scale(0.97);}
+.card-icon{font-size:36px;flex-shrink:0;}
+.card-title{font-size:18px;font-weight:800;margin-bottom:3px;}
+.card-desc{font-size:13px;color:rgba(255,255,255,0.7);}
+.arrow{margin-left:auto;font-size:20px;color:rgba(255,255,255,0.5);}
 
-  .cards { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 360px; }
+/* Register section */
+.reg-divider{display:flex;align-items:center;gap:10px;width:100%;max-width:360px;margin-top:28px;}
+.reg-divider hr{flex:1;border:none;border-top:1px solid rgba(255,255,255,0.2);}
+.reg-divider span{font-size:12px;color:rgba(255,255,255,0.5);}
+.reg-btn{width:100%;max-width:360px;margin-top:12px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:white;cursor:pointer;font-family:inherit;transition:background .2s;}
+.reg-btn:active{background:rgba(255,255,255,0.2);}
 
-  .card {
-    background: white;
-    border-radius: 18px;
-    padding: 24px 22px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-    transition: transform .18s;
-  }
-  .card:active { transform: scale(0.97); }
-
-  .card-icon { font-size: 36px; flex-shrink: 0; }
-  .card-text {}
-  .card-title { font-size: 18px; font-weight: 800; margin-bottom: 3px; }
-  .card-desc { font-size: 13px; color: rgba(255,255,255,0.7); }
-
-  .card.airside .card-title { color: white; }
-  .card.lager   .card-title { color: white; }
-
-  .arrow { margin-left: auto; font-size: 20px; color: rgba(255,255,255,0.5); }
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
+.modal-overlay.on{display:flex;}
+.modal-sheet{background:#f8fafc;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:28px 24px 40px;max-height:92vh;overflow-y:auto;}
+.modal-handle{width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 20px;}
+.modal-title{font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;}
+.modal-sub{font-size:13px;color:#64748b;margin-bottom:20px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.inp{width:100%;background:white;border:1.5px solid #e2e8f0;border-radius:12px;padding:13px 14px;font-size:14px;color:#0f172a;font-family:inherit;outline:none;transition:border .15s;}
+.inp:focus{border-color:#16a34a;}
+.inp.full{margin-bottom:10px;}
+.inp.optional{margin-bottom:10px;}
+.submit-btn{width:100%;background:#16a34a;color:white;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:4px;}
+.err-msg{display:none;color:#dc2626;font-size:13px;text-align:center;margin-top:8px;}
+.success-box{display:none;text-align:center;padding:20px 0;}
+.success-box .icon{font-size:48px;margin-bottom:12px;}
+.success-box h3{font-size:17px;font-weight:800;color:#0f172a;margin-bottom:6px;}
+.success-box p{font-size:13px;color:#64748b;}
+.close-btn{position:absolute;top:16px;right:16px;background:#e2e8f0;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;}
+.modal-head{position:relative;margin-bottom:20px;}
 </style>
 </head>
 <body>
@@ -61,7 +62,6 @@
       </div>
       <span class="arrow">›</span>
     </a>
-
     <a href="/lager.html" class="card lager" style="background:linear-gradient(135deg,#052e16,#14532d);color:white;">
       <span class="card-icon">📦</span>
       <div class="card-text">
@@ -70,7 +70,6 @@
       </div>
       <span class="arrow">›</span>
     </a>
-
     <a href="/airside-lager.html" class="card" style="background:linear-gradient(135deg,#1e1b4b,#3730a3);color:white;">
       <span class="card-icon">✈️📦</span>
       <div class="card-text">
@@ -80,5 +79,103 @@
       <span class="arrow">›</span>
     </a>
   </div>
+
+  <!-- Divider + Register Button -->
+  <div class="reg-divider">
+    <hr/><span>Noch kein Konto?</span><hr/>
+  </div>
+  <button class="reg-btn" onclick="openReg()">📝 Registrieren</button>
+
+  <!-- Register Modal -->
+  <div class="modal-overlay" id="reg-modal" onclick="if(event.target===this)closeReg()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <div class="modal-title">Registrieren</div>
+        <div class="modal-sub">bona'me × Lagardère – Neues Konto erstellen</div>
+        <button class="close-btn" onclick="closeReg()">✕</button>
+      </div>
+
+      <div id="reg-form">
+        <div class="field-row">
+          <input type="text" id="reg-first" class="inp" placeholder="Vorname *"/>
+          <input type="text" id="reg-last" class="inp" placeholder="Nachname *"/>
+        </div>
+        <input type="email" id="reg-email" class="inp full" placeholder="E-Mail Adresse *"/>
+        <input type="password" id="reg-pw" class="inp full" placeholder="Passwort * (min. 6 Zeichen)"/>
+        <input type="tel" id="reg-phone" class="inp optional" placeholder="Telefonnummer (optional)"/>
+        <button class="submit-btn" onclick="doRegister()">✅ Registrierung absenden</button>
+        <div class="err-msg" id="reg-err"></div>
+      </div>
+
+      <div class="success-box" id="reg-success">
+        <div class="icon">✅</div>
+        <h3>Registrierung eingegangen!</h3>
+        <p>Dein Konto wird vom Administrator geprüft.<br/>Du erhältst Zugang sobald du freigeschaltet wirst.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+const SB_URL = "https://xltsjtbbbykftmjkhcjm.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+
+function openReg(){document.getElementById('reg-modal').classList.add('on');}
+function closeReg(){document.getElementById('reg-modal').classList.remove('on');}
+
+async function doRegister(){
+  const first = document.getElementById('reg-first').value.trim();
+  const last  = document.getElementById('reg-last').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-pw').value;
+  const phone = document.getElementById('reg-phone').value.trim();
+  const err   = document.getElementById('reg-err');
+  err.style.display = 'none';
+
+  if(!first || !last)  { err.style.display='block'; err.textContent='❌ Bitte Vor- und Nachname eingeben.'; return; }
+  if(!email)           { err.style.display='block'; err.textContent='❌ Bitte E-Mail eingeben.'; return; }
+  if(pw.length < 6)    { err.style.display='block'; err.textContent='❌ Passwort muss mind. 6 Zeichen haben.'; return; }
+
+  try {
+    // 1. Create auth user
+    const r = await fetch(SB_URL + '/auth/v1/signup', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pw, data: { full_name: first + ' ' + last } })
+    });
+    const data = await r.json();
+    const userId = data?.user?.id || data?.session?.user?.id || data?.id;
+
+    if(!userId) {
+      err.style.display='block';
+      err.textContent = '❌ ' + (data.msg || data.message || 'Fehler bei der Registrierung.');
+      return;
+    }
+
+    // 2. Write to pending_users
+    await fetch(SB_URL + '/rest/v1/pending_users', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        user_id: userId,
+        email: email,
+        full_name: first + ' ' + last,
+        first_name: first,
+        last_name: last,
+        phone: phone || null,
+        status: 'ausstehend'
+      })
+    });
+
+    // 3. Show success
+    document.getElementById('reg-form').style.display = 'none';
+    document.getElementById('reg-success').style.display = 'block';
+
+  } catch(e) {
+    err.style.display='block';
+    err.textContent = '❌ Verbindungsfehler. Bitte erneut versuchen.';
+  }
+}
+</script>
 </body>
 </html>
