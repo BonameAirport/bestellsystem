@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Inventur – bona'me</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:#f1f5f9;min-height:100vh;padding-bottom:80px;}
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;}
+.login-title{font-size:20px;font-weight:800;color:#f1f5f9;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#64748b;text-align:center;margin-bottom:24px;}
+.inp{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:13px 14px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;}
+.inp:focus{border-color:#16a34a;}
+.login-btn{width:100%;background:#16a34a;color:white;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+.login-err{display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;}
+.topbar{background:#0f172a;padding:14px 16px 10px;position:sticky;top:0;z-index:50;}
+.topbar-title{font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:10px;}
+.search-wrap{position:relative;}
+.search-inp{width:100%;background:#1e293b;border:1.5px solid #334155;border-radius:12px;padding:10px 14px 10px 38px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;}
+.search-inp::placeholder{color:#475569;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#475569;font-size:16px;}
+.runde-banner{margin:12px 16px;background:#1e293b;border-radius:14px;padding:12px 16px;border:1px solid #334155;display:flex;align-items:center;justify-content:space-between;}
+.runde-label{font-size:12px;color:#64748b;}
+.runde-name{font-size:14px;font-weight:700;color:#f1f5f9;}
+.runde-ok{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:#d1fae5;color:#065f46;}
+.no-runde{margin:12px 16px;background:#fef3c7;border-radius:14px;padding:14px 16px;border:1px solid rgba(245,158,11,0.3);text-align:center;font-size:13px;color:#92400e;font-weight:600;}
+.section-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 16px 8px;}
+.kat-list{padding:0 16px;display:flex;flex-direction:column;gap:10px;}
+.kat-card{background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px solid #e2e8f0;}
+.kat-card.abgeschlossen{border-color:rgba(22,163,74,0.3);background:#f0fdf4;}
+.kat-card.gesperrt{opacity:0.5;cursor:not-allowed;}
+.kat-icon{font-size:26px;width:44px;height:44px;background:#f1f5f9;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.kat-name{font-size:15px;font-weight:700;color:#0f172a;}
+.kat-meta{font-size:11px;color:#64748b;margin-top:2px;}
+.badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0;}
+.badge.offen{background:#e0e7ff;color:#3730a3;}
+.badge.gesperrt{background:#fee2e2;color:#dc2626;}
+.badge.abgeschlossen{background:#d1fae5;color:#065f46;}
+.artikel-page{display:none;position:fixed;inset:0;background:#f1f5f9;z-index:100;overflow-y:auto;padding-bottom:120px;}
+.ap-bar{background:#0f172a;padding:14px 16px;position:sticky;top:0;z-index:101;display:flex;align-items:center;gap:10px;}
+.back-btn{background:rgba(255,255,255,0.1);border:none;border-radius:10px;width:36px;height:36px;color:white;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.ak-card{background:white;border-radius:14px;margin:10px 16px;padding:14px;border:1.5px solid #e2e8f0;}
+.ak-card.rot{border-color:#fca5a5;}
+.ak-card.gelb{border-color:#fcd34d;}
+.ak-card.gruen{border-color:#86efac;}
+.ak-img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f1f5f9;flex-shrink:0;}
+.ak-name{font-size:14px;font-weight:700;color:#0f172a;}
+.ak-meta{font-size:12px;color:#64748b;margin-top:2px;}
+.ak-diff{font-size:12px;font-weight:700;margin-top:4px;}
+.ist-inp{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:16px;font-weight:700;color:#0f172a;font-family:inherit;outline:none;text-align:center;}
+.ist-inp:focus{border-color:#16a34a;}
+.km-inp{width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;color:#0f172a;font-family:inherit;outline:none;margin-top:8px;resize:none;}
+.abs-bar{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px 16px;border-top:1px solid #e2e8f0;z-index:102;}
+.abs-btn{width:100%;background:#16a34a;color:white;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+.abs-btn:disabled{background:#94a3b8;}
+.ek-card{background:white;border-radius:14px;margin-bottom:10px;padding:14px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;}
+.ek-img{width:48px;height:48px;border-radius:10px;object-fit:cover;background:#f1f5f9;flex-shrink:0;}
+.ek-inp{width:90px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:14px;font-weight:700;color:#0f172a;font-family:inherit;outline:none;text-align:right;}
+.ek-inp:focus{border-color:#16a34a;}
+.ergebnis-card{background:white;border-radius:14px;margin-bottom:10px;padding:14px;border:1px solid #e2e8f0;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e2e8f0;display:flex;z-index:60;padding-bottom:env(safe-area-inset-bottom);}
+.nav-btn{flex:1;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;font-family:inherit;}
+.nav-label{font-size:10px;font-weight:700;color:#94a3b8;}
+.nav-btn.active .nav-label{color:#16a34a;}
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <div class="login-title">&#x1F4CB; Inventur</div>
+    <div class="login-sub">bona'me x Lagardere</div>
+    <input type="email" id="login-email" class="inp" placeholder="E-Mail" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="login-pw" class="inp" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">&#x1F510; Anmelden</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-title">bona'me</div>
+    <div class="search-wrap">
+      <span class="search-icon">&#x1F50D;</span>
+      <input type="text" class="search-inp" id="search-inp" placeholder="Artikel oder Kategorie suchen..." oninput="doSearch(this.value)"/>
+    </div>
+  </div>
+
+  <div id="tab-bereich">
+    <div id="runde-banner"></div>
+    <div class="section-title">Kategorien</div>
+    <div class="kat-list" id="kat-list"></div>
+  </div>
+
+  <div id="tab-ek" style="display:none;">
+    <div style="background:#0f172a;padding:12px 16px;">
+      <div style="font-size:14px;font-weight:800;color:#f1f5f9;">&#x1F4B6; EK-Preise &amp; Soll-Bestand</div>
+    </div>
+    <div style="padding:16px;" id="ek-list"></div>
+  </div>
+
+  <div id="tab-ergebnisse" style="display:none;">
+    <div style="background:#0f172a;padding:12px 16px;">
+      <div style="font-size:14px;font-weight:800;color:#f1f5f9;">&#x1F4CA; Ergebnisse</div>
+    </div>
+    <div style="padding:16px;" id="ergebnis-list"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-bereich" onclick="showTab('bereich')">
+      <span style="font-size:20px;">&#x1F4CB;</span>
+      <span class="nav-label">Bereich</span>
+    </button>
+    <button class="nav-btn" id="nav-ek" onclick="showTab('ek')">
+      <span style="font-size:20px;">&#x1F4B6;</span>
+      <span class="nav-label">EK-Preise</span>
+    </button>
+    <button class="nav-btn" id="nav-ergebnisse" onclick="showTab('ergebnisse')">
+      <span style="font-size:20px;">&#x1F4CA;</span>
+      <span class="nav-label">Ergebnisse</span>
+    </button>
+  </div>
+</div>
+
+<div class="artikel-page" id="artikel-page">
+  <div class="ap-bar">
+    <button class="back-btn" onclick="closeArtikelPage()">&#8592;</button>
+    <div style="flex:1;">
+      <div style="font-size:15px;font-weight:800;color:white;" id="ap-title">Kategorie</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);" id="ap-count"></div>
+    </div>
+  </div>
+  <div id="ap-list"></div>
+  <div class="abs-bar" id="abs-bar">
+    <button class="abs-btn" id="abs-btn" onclick="abschliessenKategorie()">&#x2705; Kategorie abschliessen</button>
+  </div>
+</div>
+
+<script>
+var SB_URL = "https://xltsjtbbbykftmjkhcjm.supabase.co";
+var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+var PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect width='56' height='56' fill='%23f1f5f9'/%3E%3Ctext y='38' x='28' text-anchor='middle' font-size='24'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E";
+var _token=null,_userId=null,_userName=null;
+var _aktRunde=null,_aktKatId=null,_aktSessionId=null;
+var _artikel=[],_kategorien=[],_istWerte={},_kommentare={};
+
+async function doLogin(){
+  var email=document.getElementById('login-email').value.trim();
+  var pw=document.getElementById('login-pw').value;
+  var err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!email||!pw){err.style.display='block';err.textContent='Bitte Email und Passwort eingeben.';return;}
+  var r=await fetch(SB_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pw})});
+  var data=await r.json();
+  if(!data.access_token){err.style.display='block';err.textContent='Falsche Zugangsdaten.';return;}
+  _token=data.access_token;
+  var payload=JSON.parse(atob(_token.split('.')[1]));
+  _userId=payload.sub;
+  localStorage.setItem('inv_token',_token);
+  localStorage.setItem('inv_exp',(Date.now()+(data.expires_in*1000)).toString());
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('app').style.display='block';
+  loadApp();
+}
+
+function h(){return {'apikey':SB_KEY,'Authorization':'Bearer '+_token,'Content-Type':'application/json'};}
+
+async function api(method,table,query,body){
+  var o={method:method,headers:h()};
+  if(body) o.body=JSON.stringify(body);
+  if(method==='PATCH'||method==='POST') o.headers['Prefer']='return=representation';
+  var r=await fetch(SB_URL+'/rest/v1/'+table+(query||''),o);
+  if(!r.ok) return null;
+  if(method==='DELETE') return true;
+  return await r.json();
+}
+
+async function loadApp(){
+  var users=await api('GET','pending_users','?user_id=eq.'+_userId+'&select=full_name');
+  _userName=(users&&users[0])?users[0].full_name:'Unbekannt';
+  var runden=await api('GET','inventur_runden','?status=eq.offen&order=gestartet_am.desc&limit=1');
+  _aktRunde=(runden&&runden.length)?runden[0]:null;
+  renderRundeBanner();
+  loadKategorien();
+}
+
+function renderRundeBanner(){
+  var el=document.getElementById('runde-banner');
+  if(!_aktRunde){
+    el.innerHTML='<div class="no-runde">&#x26A0;&#xFE0F; Keine aktive Inventur-Runde. Bitte Admin kontaktieren.</div>';
+    return;
+  }
+  el.innerHTML='<div class="runde-banner"><div><div class="runde-label">Aktive Inventur</div><div class="runde-name">'+_aktRunde.monat+' '+_aktRunde.jahr+'</div></div><span class="runde-ok">Offen</span></div>';
+}
+
+var KAT_ICONS={'Getraenke':'&#x1F37A;','Kaffeeartikel':'&#x2615;','TK':'&#x2744;&#xFE0F;','Kuehlhaus':'&#x1F9CA;','Bar Schubladen':'&#x1F378;','Kueche Schubladen':'&#x1F373;','Trockenlager':'&#x1F4E6;'};
+function getKatIcon(name){return KAT_ICONS[name]||'&#x1F4E6;';}
+
+async function loadKategorien(){
+  _kategorien=await api('GET','inventur_kategorien','?aktiv=eq.true&order=reihenfolge.asc')||[];
+  var sessions=_aktRunde?await api('GET','inventur_session','?runde_id=eq.'+_aktRunde.id)||[]:[];
+  var el=document.getElementById('kat-list');
+  if(!_kategorien.length){el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Keine Kategorien gefunden</div>';return;}
+  
+  el.innerHTML=_kategorien.map(function(k){
+    var session=sessions.find(function(s){return s.kategorie_id===k.id;});
+    var status='offen',badge='Offen',meta='',cls='',sid='';
+    if(session){
+      sid=session.id;
+      if(session.abgeschlossen_at){status='abgeschlossen';badge='Fertig';meta='von '+session.mitarbeiter_name;cls='abgeschlossen';}
+      else if(session.gesperrt_von&&session.gesperrt_von!==_userId){status='gesperrt';badge='Gesperrt';meta='wird gezaehlt...';cls='gesperrt';}
+    }
+    return '<div class="kat-card '+cls+'" data-id="'+k.id+'" data-name="'+k.name+'" data-status="'+status+'" data-sid="'+sid+'">'+
+      '<div class="kat-icon">'+getKatIcon(k.name)+'</div>'+
+      '<div style="flex:1;"><div class="kat-name">'+k.name+'</div><div class="kat-meta">'+meta+'</div></div>'+
+      '<span class="badge '+status+'">'+badge+'</span>'+
+      '</div>';
+  }).join('');
+  
+  el.querySelectorAll('.kat-card').forEach(function(c){
+    c.onclick=function(){
+      openKategorie(this.dataset.id,this.dataset.name,this.dataset.status,this.dataset.sid);
+    };
+  });
+}
+
+async function openKategorie(katId,katName,status,sessionId){
+  if(status==='gesperrt') return;
+  if(!_aktRunde){alert('Keine aktive Inventur-Runde!');return;}
+  _aktKatId=katId; _istWerte={}; _kommentare={};
+  document.getElementById('ap-title').textContent=katName;
+  document.getElementById('artikel-page').style.display='block';
+  document.getElementById('ap-list').innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Laedt...</div>';
+  
+  if(!sessionId){
+    var ns=await api('POST','inventur_session','',{kategorie_id:katId,mitarbeiter_id:_userId,mitarbeiter_name:_userName,datum:new Date().toISOString().split('T')[0],runde_id:_aktRunde.id,gesperrt_von:_userId,gesperrt_am:new Date().toISOString()});
+    _aktSessionId=ns&&ns[0]?ns[0].id:null;
+  } else {
+    _aktSessionId=sessionId;
+    await api('PATCH','inventur_session','?id=eq.'+sessionId,{gesperrt_von:_userId,gesperrt_am:new Date().toISOString()});
+  }
+  
+  _artikel=await api('GET','articles','?kategorie_id=eq.'+katId+'&order=name.asc')||[];
+  
+  if(_aktSessionId){
+    var pos=await api('GET','inventur_positionen','?session_id=eq.'+_aktSessionId)||[];
+    pos.forEach(function(p){_istWerte[p.artikel_id]=p.ist_bestand;_kommentare[p.artikel_id]=p.kommentar||'';});
+  }
+  
+  renderArtikelList(status==='abgeschlossen');
+}
+
+function renderArtikelList(readonly){
+  var el=document.getElementById('ap-list');
+  document.getElementById('ap-count').textContent=_artikel.length+' Artikel';
+  document.getElementById('abs-bar').style.display=readonly?'none':'block';
+  
+  if(!_artikel.length){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:#64748b;">Keine Artikel in dieser Kategorie.</div>';
+    return;
+  }
+  
+  el.innerHTML=_artikel.map(function(a){
+    var ist=_istWerte[a.id]!==undefined?_istWerte[a.id]:'';
+    var komm=_kommentare[a.id]||'';
+    var soll=a.soll_bestand||0;
+    var diff=(ist!=='')?parseInt(ist)-soll:null;
+    var dClass='',cClass='',dText='';
+    if(diff!==null){
+      var pct=soll>0?Math.abs(diff/soll*100):0;
+      if(diff<0&&pct>10){dClass='color:#dc2626;';cClass='rot';}
+      else if(diff<0&&pct>5){dClass='color:#d97706;';cClass='gelb';}
+      else{dClass='color:#16a34a;';cClass='gruen';}
+      dText=(diff>=0?'+':'')+diff+' (Soll: '+soll+')';
+    }
+    var img=a.image_url||PLACEHOLDER;
+    var ro=readonly?'readonly disabled':'';
+    return '<div class="ak-card '+cClass+'">'+
+      '<div style="display:flex;gap:12px;margin-bottom:12px;">'+
+        '<img class="ak-img" src="'+img+'" onerror="this.src=PLACEHOLDER"/>'+
+        '<div style="flex:1;">'+
+          '<div class="ak-name">'+a.name+'</div>'+
+          '<div class="ak-meta">EK: '+(a.ek_preis?'EUR '+parseFloat(a.ek_preis).toFixed(2):'-')+'</div>'+
+          '<div class="ak-meta">Soll: '+soll+'</div>'+
+          (diff!==null?'<div class="ak-diff" style="'+dClass+'">Differenz: '+dText+'</div>':'')+
+        '</div>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+        '<div><div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">Ist-Bestand</div>'+
+          '<input type="number" class="ist-inp" data-id="'+a.id+'" value="'+ist+'" min="0" '+ro+' placeholder="0"/></div>'+
+        '<div><div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">Einheit</div>'+
+          '<div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;color:#64748b;text-align:center;">'+(a.unit||'-')+'</div></div>'+
+      '</div>'+
+      '<textarea class="km-inp" data-id="'+a.id+'" placeholder="Kommentar (optional)" '+ro+'>'+komm+'</textarea>'+
+    '</div>';
+  }).join('');
+  
+  el.querySelectorAll('.ist-inp').forEach(function(inp){
+    inp.oninput=function(){updateIst(this.dataset.id,this.value);};
+  });
+  el.querySelectorAll('.km-inp').forEach(function(ta){
+    ta.oninput=function(){_kommentare[this.dataset.id]=this.value;};
+  });
+}
+
+function updateIst(id,val){
+  _istWerte[id]=val===''?'':parseInt(val)||0;
+  var a=_artikel.find(function(x){return x.id===id;});
+  if(!a) return;
+  var soll=a.soll_bestand||0;
+  var ist=_istWerte[id];
+  var card=document.querySelector('.ak-card:has([data-id="'+id+'"])');
+  if(!card) return;
+  if(ist==='') return;
+  var diff=ist-soll;
+  var pct=soll>0?Math.abs(diff/soll*100):0;
+  card.className='ak-card '+(diff<0&&pct>10?'rot':diff<0&&pct>5?'gelb':'gruen');
+  var dEl=card.querySelector('.ak-diff');
+  var dClass=diff<0&&pct>10?'color:#dc2626;':diff<0&&pct>5?'color:#d97706;':'color:#16a34a;';
+  var dText=(diff>=0?'+':'')+diff+' (Soll: '+soll+')';
+  if(dEl){dEl.style.cssText=dClass;dEl.textContent='Differenz: '+dText;}
+}
+
+function closeArtikelPage(){
+  document.getElementById('artikel-page').style.display='none';
+  if(_aktSessionId){
+    fetch(SB_URL+'/rest/v1/inventur_session?id=eq.'+_aktSessionId,{method:'PATCH',headers:h(),body:JSON.stringify({gesperrt_von:null,gesperrt_am:null})});
+  }
+  loadKategorien();
+}
+
+async function abschliessenKategorie(){
+  if(!confirm('Kategorie abschliessen? Danach nicht mehr aenderbar!')) return;
+  var btn=document.getElementById('abs-btn');
+  btn.disabled=true; btn.textContent='Wird gespeichert...';
+  for(var i=0;i<_artikel.length;i++){
+    var a=_artikel[i];
+    var ist=_istWerte[a.id]!==undefined?parseInt(_istWerte[a.id])||0:0;
+    var soll=a.soll_bestand||0;
+    await api('POST','inventur_positionen','',{session_id:_aktSessionId,artikel_id:a.id,artikel_name:a.name,artikel_bild:a.image_url||'',ek_preis:a.ek_preis||0,soll_bestand:soll,ist_bestand:ist,differenz:ist-soll,kommentar:_kommentare[a.id]||''});
+  }
+  await api('PATCH','inventur_session','?id=eq.'+_aktSessionId,{abgeschlossen_at:new Date().toISOString(),gesperrt_von:null});
+  document.getElementById('artikel-page').style.display='none';
+  loadKategorien();
+}
+
+function showTab(tab){
+  ['bereich','ek','ergebnisse'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('nav-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='ek') loadEkPreise();
+  if(tab==='ergebnisse') loadErgebnisse();
+}
+
+async function loadEkPreise(){
+  var el=document.getElementById('ek-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Laedt...</div>';
+  var artikel=await api('GET','articles','?order=name.asc')||[];
+  if(!artikel.length){el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Keine Artikel</div>';return;}
+  el.innerHTML=artikel.map(function(a){
+    return '<div class="ek-card">'+
+      '<img class="ek-img" src="'+(a.image_url||PLACEHOLDER)+'" onerror="this.src=PLACEHOLDER"/>'+
+      '<div style="flex:1;">'+
+        '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+a.name+'</div>'+
+        '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">Soll: <input type="number" class="soll-inp" data-id="'+a.id+'" style="width:50px;border:none;border-bottom:1px solid #e2e8f0;font-size:11px;font-family:inherit;outline:none;background:transparent;" value="'+(a.soll_bestand||0)+'"/></div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:4px;">'+
+        '<span style="font-size:13px;color:#64748b;">EUR</span>'+
+        '<input type="number" step="0.01" class="ek-inp" data-id="'+a.id+'" value="'+(a.ek_preis||'')+'" placeholder="0.00"/>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  el.querySelectorAll('.soll-inp').forEach(function(inp){
+    inp.onchange=function(){saveField(this.dataset.id,'soll_bestand',this.value);};
+  });
+  el.querySelectorAll('.ek-inp').forEach(function(inp){
+    inp.onchange=function(){saveField(this.dataset.id,'ek_preis',this.value);};
+  });
+}
+
+async function saveField(id,field,val){
+  var body={};body[field]=parseFloat(val)||0;
+  await api('PATCH','articles','?id=eq.'+id,body);
+}
+
+async function loadErgebnisse(){
+  var el=document.getElementById('ergebnis-list');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Laedt...</div>';
+  var sessions=await api('GET','inventur_session','?order=erstellt_am.desc&limit=50')||[];
+  if(!sessions.length){el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Noch keine Inventuren</div>';return;}
+  var katMap={};
+  _kategorien.forEach(function(k){katMap[k.id]=k.name;});
+  el.innerHTML=sessions.map(function(s){
+    var kat=katMap[s.kategorie_id]||'Unbekannt';
+    var datum=s.abgeschlossen_at?new Date(s.abgeschlossen_at).toLocaleString('de-DE'):'Offen';
+    return '<div class="ergebnis-card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'+
+        '<div>'+
+          '<div style="font-size:14px;font-weight:800;color:#0f172a;">'+kat+'</div>'+
+          '<div style="font-size:12px;color:#64748b;margin-top:2px;">'+s.mitarbeiter_name+'</div>'+
+          '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+datum+'</div>'+
+        '</div>'+
+        '<span style="font-size:12px;font-weight:700;color:'+(s.abgeschlossen_at?'#16a34a':'#f59e0b')+';">'+(s.abgeschlossen_at?'Abgeschlossen':'Offen')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function doSearch(q){
+  document.querySelectorAll('.kat-card').forEach(function(c){
+    var name=c.querySelector('.kat-name').textContent.toLowerCase();
+    c.style.display=(!q||name.includes(q.toLowerCase()))?'flex':'none';
+  });
+}
+
+window.addEventListener('DOMContentLoaded',function(){
+  var token=localStorage.getItem('inv_token');
+  var exp=parseInt(localStorage.getItem('inv_exp')||'0');
+  if(token&&exp>Date.now()){
+    _token=token;
+    var payload=JSON.parse(atob(token.split('.')[1]));
+    _userId=payload.sub;
+    document.getElementById('login-overlay').style.display='none';
+    document.getElementById('app').style.display='block';
+    loadApp();
+  }
+});
+</script>
+</body>
+</html>
