@@ -58,6 +58,17 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 </style>
 </head>
 <body>
+
+<div id="login-screen" style="position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;">
+    <div style="font-size:20px;font-weight:800;color:#f1f5f9;text-align:center;margin-bottom:4px;">📋 Lager</div>
+    <div style="font-size:13px;color:#64748b;text-align:center;margin-bottom:24px;">bona'me × Lagardère</div>
+    <input type="email" id="login-email" placeholder="Email" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="login-pw" placeholder="Passwort" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:12px;" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()" style="width:100%;background:#16a34a;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;">🔐 Anmelden</button>
+    <div id="login-err" style="display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;"></div>
+  </div>
+</div>
 <div class="header" id="main-header">
   <h1>📋 Lager Bestellungen</h1>
   <div class="sub">bona'me × Lagardère</div>
@@ -81,7 +92,7 @@ let allOrders=[], imgMap={}, sectionMap={}, currentFilter='all';
 
 async function api(method,table,query="",body=null){
   try{
-    const o={method,headers:{...H}};
+    const o={method,headers:getHeaders()};
     if(body) o.body=JSON.stringify(body);
     if(method==="PATCH") o.headers["Prefer"]="return=representation";
     const r=await fetch(`${SB_URL}/rest/v1/${table}${query}`,o);
@@ -278,7 +289,14 @@ async function updateStatus(id,status){
   renderList();
 }
 
-window.addEventListener('DOMContentLoaded',loadOrders);
+window.addEventListener('DOMContentLoaded',function(){
+  const sess=localStorage.getItem('emp_session');
+  const token=localStorage.getItem('emp_token');
+  if(sess&&parseInt(sess)>Date.now()&&token){
+    document.getElementById('login-screen').style.display='none';
+    loadOrders();
+  }
+});
 setInterval(updateTimers,30000);
 setInterval(async()=>{
   const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
@@ -377,6 +395,29 @@ function updateTimers(){
     el.style.color=color;
     el.style.background=bg;
   });
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  const err=document.getElementById('login-err');
+  if(!email||!pw){err.style.display='block';err.textContent='Bitte Email und Passwort eingeben.';return;}
+  try{
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pw})
+    });
+    const data=await r.json();
+    if(data.access_token){
+      localStorage.setItem('emp_token',data.access_token);
+      localStorage.setItem('emp_session',(Date.now()+8*3600000).toString());
+      document.getElementById('login-screen').style.display='none';
+      loadOrders();
+    } else {
+      err.style.display='block';err.textContent='Falsche Email oder Passwort';
+    }
+  }catch(e){err.style.display='block';err.textContent='Verbindungsfehler';}
 }
 </script>
 </body>
