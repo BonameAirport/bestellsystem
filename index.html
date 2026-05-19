@@ -25,6 +25,8 @@ h1{color:white;font-size:24px;font-weight:800;text-align:center;margin-bottom:6p
 .reg-divider span{font-size:12px;color:rgba(255,255,255,0.5);}
 .reg-btn{width:100%;max-width:360px;margin-top:12px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.25);border-radius:14px;padding:14px;font-size:14px;font-weight:700;color:white;cursor:pointer;font-family:inherit;transition:background .2s;}
 .reg-btn:active{background:rgba(255,255,255,0.2);}
+.install-btn{width:100%;max-width:360px;margin-top:8px;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.15);border-radius:14px;padding:12px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);cursor:pointer;font-family:inherit;display:none;}
+.install-btn:active{background:rgba(255,255,255,0.15);}
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:flex-end;justify-content:center;padding:0;}
@@ -47,6 +49,10 @@ h1{color:white;font-size:24px;font-weight:800;text-align:center;margin-bottom:6p
 .close-btn{position:absolute;top:16px;right:16px;background:#e2e8f0;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;}
 .modal-head{position:relative;margin-bottom:20px;}
 </style>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
 </head>
 <body>
   <div class="logo">🍽️</div>
@@ -85,6 +91,7 @@ h1{color:white;font-size:24px;font-weight:800;text-align:center;margin-bottom:6p
     <hr/><span>Noch kein Konto?</span><hr/>
   </div>
   <button class="reg-btn" onclick="openReg()">📝 Registrieren</button>
+  <button class="install-btn" id="install-btn" onclick="installApp()">📲 App installieren</button>
 
   <!-- Register Modal -->
   <div class="modal-overlay" id="reg-modal" onclick="if(event.target===this)closeReg()">
@@ -121,6 +128,13 @@ const SB_URL = "https://xltsjtbbbykftmjkhcjm.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
 
 function openReg(){document.getElementById('reg-modal').classList.add('on');}
+
+// Auto-open if ?register=true
+window.addEventListener('DOMContentLoaded', function(){
+  if(window.location.search.includes('register=true')){
+    openReg();
+  }
+});
 function closeReg(){document.getElementById('reg-modal').classList.remove('on');}
 
 async function doRegister(){
@@ -176,6 +190,36 @@ async function doRegister(){
     err.textContent = '❌ Verbindungsfehler. Bitte erneut versuchen.';
   }
 }
+
+// ─── PWA ─────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(e){
+      console.log('SW error:', e);
+    });
+  });
+}
+
+var _installPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  _installPrompt = e;
+  document.getElementById('install-btn').style.display = 'block';
+});
+
+function installApp(){
+  if(!_installPrompt) return;
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(function(){
+    _installPrompt = null;
+    document.getElementById('install-btn').style.display = 'none';
+  });
+}
+
+window.addEventListener('appinstalled', function(){
+  document.getElementById('install-btn').style.display = 'none';
+});
+
 </script>
 </body>
 </html>

@@ -188,6 +188,10 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 .art-row.drag-over-bottom{border-bottom:3px solid #2563eb !important;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
@@ -1202,7 +1206,11 @@ tr:nth-child(even) td{background:#f8fafc;}
 .footer{margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;text-align:center;font-size:11px;color:#94a3b8;}
 .print-btn{display:block;margin:18px auto 0;background:#14532d;color:white;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
 @media print{.print-btn{display:none;}}
-</style></head><body>
+</style>  <link rel="manifest" href="/manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
+</head><body>
 <!-- OH CLOSED BANNER -->
 <div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
@@ -1736,13 +1744,13 @@ function showMitarbeiterPage(){
     _mitQrDone=true;
     try{
       new QRCode(document.getElementById('mit-qr-small'),{
-        text:'https://airport-dus-boname.netlify.app/',
+        text:'https://airport-dus-boname.netlify.app/?register=true',
         width:80, height:80,
         colorDark:'#16a34a', colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.H
       });
       new QRCode(document.getElementById('mit-qr-large'),{
-        text:'https://airport-dus-boname.netlify.app/',
+        text:'https://airport-dus-boname.netlify.app/?register=true',
         width:220, height:220,
         colorDark:'#16a34a', colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.H
@@ -1815,6 +1823,14 @@ async function loadMitarbeiterPage(){
   var token=localStorage.getItem('sb_token');
   var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   var users=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];});
+  // Debug
+  if(users && users.code === 'PGRST301' || (users && users.message && users.message.includes('expired'))) {
+    localStorage.removeItem('sb_token');
+    localStorage.removeItem('app_session');
+    location.reload();
+    return;
+  }
+  if(users && users.code) { alert('API Fehler: ' + users.message); users=[]; }
   users=users||[];
   
   var countEl=document.getElementById('mit-count');
@@ -1854,6 +1870,150 @@ async function loadMitarbeiterPage(){
   }).join('');
 }
 
+
+// ─── AUTH MODULE ─────────────────────────────────────────
+const SB_AUTH = "https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+
+function getToken(){return localStorage.getItem('sb_token');}
+function getRefreshToken(){return localStorage.getItem('sb_refresh');}
+
+function saveSession(data){
+  if(data.access_token) localStorage.setItem('sb_token', data.access_token);
+  if(data.refresh_token) localStorage.setItem('sb_refresh', data.refresh_token);
+  if(data.expires_in){
+    var expiresAt = Date.now() + (data.expires_in * 1000);
+    localStorage.setItem('sb_expires', expiresAt.toString());
+  }
+}
+
+function clearSession(){
+  localStorage.removeItem('sb_token');
+  localStorage.removeItem('sb_refresh');
+  localStorage.removeItem('sb_expires');
+  localStorage.removeItem('app_session');
+}
+
+function isTokenExpiringSoon(){
+  var expires = parseInt(localStorage.getItem('sb_expires') || '0');
+  // Refresh if less than 5 minutes left
+  return expires > 0 && (expires - Date.now()) < 5 * 60 * 1000;
+}
+
+async function refreshToken(){
+  var refresh = getRefreshToken();
+  if(!refresh) return false;
+  try{
+    var r = await fetch(SB_AUTH + '/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: {'apikey': ANON_KEY, 'Content-Type': 'application/json'},
+      body: JSON.stringify({refresh_token: refresh})
+    });
+    var data = await r.json();
+    if(data.access_token){
+      saveSession(data);
+      return true;
+    }
+    return false;
+  }catch(e){
+    return false;
+  }
+}
+
+async function getValidToken(){
+  if(isTokenExpiringSoon()){
+    var refreshed = await refreshToken();
+    if(!refreshed){
+      clearSession();
+      location.reload();
+      return null;
+    }
+  }
+  return getToken();
+}
+
+// Auto-refresh every 4 minutes
+setInterval(async function(){
+  if(getToken() && isTokenExpiringSoon()){
+    await refreshToken();
+  }
+}, 4 * 60 * 1000);
+
+
+// ─── ACCESS CHECK ────────────────────────────────────────
+const OWNER_ID = "dbeecae7-3b37-4c66-91fd-820fe6e55ac1";
+const SB_URL_AC = "https://xltsjtbbbykftmjkhcjm.supabase.co";
+const ANON_KEY_AC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+
+async function checkAccess(){
+  var token = getToken();
+  if(!token){ location.reload(); return; }
+
+  // Get user ID from token
+  try{
+    var payload = JSON.parse(atob(token.split('.')[1]));
+    var userId = payload.sub;
+
+    // Owner always has access
+    if(userId === OWNER_ID) return;
+
+    // Check status in pending_users
+    var r = await fetch(SB_URL_AC + '/rest/v1/pending_users?user_id=eq.' + userId + '&select=status', {
+      headers: {'apikey': ANON_KEY_AC, 'Authorization': 'Bearer ' + token}
+    });
+    var data = await r.json();
+
+    if(!data || !data.length){
+      // Not in pending_users - new user, show pending message
+      showAccessDenied('ausstehend');
+      return;
+    }
+
+    var status = data[0].status;
+    if(status !== 'aktiv'){
+      showAccessDenied(status);
+      return;
+    }
+  }catch(e){
+    // Token parse error - reload
+    clearSession();
+    location.reload();
+  }
+}
+
+function showAccessDenied(status){
+  var msg = status === 'ausstehend'
+    ? '⏳ Dein Konto wartet auf Freischaltung durch einen Administrator.'
+    : '❌ Dein Konto wurde abgelehnt. Bitte wende dich an einen Administrator.';
+
+  var screen = document.getElementById('login-screen');
+  var body = document.querySelector('body');
+
+  // Show full screen message
+  var div = document.createElement('div');
+  div.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  div.innerHTML = '<div style="background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;text-align:center;">' +
+    '<div style="font-size:48px;margin-bottom:16px;">' + (status==='ausstehend'?'⏳':'❌') + '</div>' +
+    '<div style="font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:8px;">' + (status==='ausstehend'?'Warte auf Freischaltung':'Zugang verweigert') + '</div>' +
+    '<div style="font-size:13px;color:#64748b;margin-bottom:24px;">' + msg + '</div>' +
+    '<button onclick="clearSession();location.reload();" style="background:#334155;color:#f1f5f9;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">🔐 Zurück zum Login</button>' +
+    '</div>';
+  body.appendChild(div);
+  
+  // Hide main content
+  var mainWrap = document.getElementById('main-wrap');
+  if(mainWrap) mainWrap.style.display = 'none';
+  var loginScr = document.getElementById('login-screen');
+  if(loginScr) loginScr.style.display = 'none';
+}
+
+
+// Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
 </script>
 
 <!-- TEA ADMIN MODAL -->

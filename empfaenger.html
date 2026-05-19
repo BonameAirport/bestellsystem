@@ -56,6 +56,10 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .loading{text-align:center;padding:50px 20px;color:#64748b;}
 .refresh-btn{position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:#16a34a;border:none;color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:50;}
 </style>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
 </head>
 <body>
 
@@ -411,6 +415,7 @@ async function doLogin(){
     });
     const data=await r.json();
     if(data.access_token){
+      saveSession(data);
       localStorage.setItem('emp_token',data.access_token);
       localStorage.setItem('emp_session',(Date.now()+8*3600000).toString());
       document.getElementById('login-screen').style.display='none';
@@ -419,6 +424,82 @@ async function doLogin(){
       err.style.display='block';err.textContent='Falsche Email oder Passwort';
     }
   }catch(e){err.style.display='block';err.textContent='Verbindungsfehler';}
+}
+
+// ─── AUTH MODULE ─────────────────────────────────────────
+const SB_AUTH = "https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1";
+const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+
+function getToken(){return localStorage.getItem('sb_token');}
+function getRefreshToken(){return localStorage.getItem('sb_refresh');}
+
+function saveSession(data){
+  if(data.access_token) localStorage.setItem('sb_token', data.access_token);
+  if(data.refresh_token) localStorage.setItem('sb_refresh', data.refresh_token);
+  if(data.expires_in){
+    var expiresAt = Date.now() + (data.expires_in * 1000);
+    localStorage.setItem('sb_expires', expiresAt.toString());
+  }
+}
+
+function clearSession(){
+  localStorage.removeItem('sb_token');
+  localStorage.removeItem('sb_refresh');
+  localStorage.removeItem('sb_expires');
+  localStorage.removeItem('app_session');
+}
+
+function isTokenExpiringSoon(){
+  var expires = parseInt(localStorage.getItem('sb_expires') || '0');
+  // Refresh if less than 5 minutes left
+  return expires > 0 && (expires - Date.now()) < 5 * 60 * 1000;
+}
+
+async function refreshToken(){
+  var refresh = getRefreshToken();
+  if(!refresh) return false;
+  try{
+    var r = await fetch(SB_AUTH + '/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: {'apikey': ANON_KEY, 'Content-Type': 'application/json'},
+      body: JSON.stringify({refresh_token: refresh})
+    });
+    var data = await r.json();
+    if(data.access_token){
+      saveSession(data);
+      return true;
+    }
+    return false;
+  }catch(e){
+    return false;
+  }
+}
+
+async function getValidToken(){
+  if(isTokenExpiringSoon()){
+    var refreshed = await refreshToken();
+    if(!refreshed){
+      clearSession();
+      location.reload();
+      return null;
+    }
+  }
+  return getToken();
+}
+
+// Auto-refresh every 4 minutes
+setInterval(async function(){
+  if(getToken() && isTokenExpiringSoon()){
+    await refreshToken();
+  }
+}, 4 * 60 * 1000);
+
+
+// Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js');
+  });
 }
 </script>
 </body>
