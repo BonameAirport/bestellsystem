@@ -1606,6 +1606,9 @@ async function loadMitarbeiterPage(){
   var token=localStorage.getItem('sb_token');
   var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   var users=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];});
+  // Debug
+  console.log('pending_users response:', JSON.stringify(users));
+  if(users && users.code) { alert('API Fehler: ' + users.message); users=[]; }
   users=users||[];
   
   var countEl=document.getElementById('mit-count');
