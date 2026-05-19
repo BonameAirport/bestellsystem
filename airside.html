@@ -21,7 +21,7 @@ body{padding-top:130px;font-family:'Sora',sans-serif;background:#f0f4fa;min-heig
 .login-err{color:#dc2626;font-size:13px;text-align:center;display:none;margin-top:8px;}
 
 /* HEADER */
-.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;position:fixed;top:0;left:0;right:0;z-index:90;}
+.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;position:fixed;top:0;left:0;right:0;z-index:90;;position:sticky;top:0;z-index:55;}
 .header h1{font-size:22px;font-weight:800;margin-bottom:4px;}
 .header .sub{font-size:13px;color:rgba(255,255,255,0.75);}
 .lang-sw{position:absolute;top:14px;right:14px;display:flex;gap:4px;}
@@ -58,7 +58,7 @@ textarea{min-height:70px;resize:vertical;}
 
 /* RECIPIENT COLLAPSE */
 .recipient-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
-.recipient-body{padding-top:130px;overflow:hidden;transition:max-height 0.3s ease;max-height:600px;}
+.recipient-body{overflow:hidden;transition:max-height 0.3s ease;max-height:600px;}
 .recipient-body.collapsed{max-height:0;}
 
 /* SEARCH */
@@ -69,7 +69,7 @@ textarea{min-height:70px;resize:vertical;}
 
 /* ARTICLE SECTIONS */
 .section-head{background:#1a3a6b;color:white;padding:10px 16px;border-radius:10px 10px 0 0;font-size:13px;font-weight:700;margin-top:8px;}
-.section-body{padding-top:130px;background:white;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;margin-bottom:4px;overflow:hidden;}
+.section-body{background:white;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;margin-bottom:4px;overflow:hidden;}
 
 /* TEA SUBMENU */
 .tea-sub{display:none;background:#0f172a;}
@@ -102,7 +102,7 @@ textarea{min-height:70px;resize:vertical;}
 .s-open{background:#fef3c7;color:#b45309;}
 .s-ok{background:#d1fae5;color:#065f46;}
 .s-err{background:#fee2e2;color:#dc2626;}
-.order-body{padding-top:130px;padding:14px 16px;border-top:1px solid #f1f5f9;display:none;}
+.order-body{padding:14px 16px;border-top:1px solid #f1f5f9;display:none;}
 .order-body.on{display:block;}
 
 /* STATS */
@@ -166,7 +166,7 @@ body.dark .add-form{background:#0f172a;border-color:#334155;}
 body.dark .sf-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
 body.dark .stat-card{background:#1e293b;border-color:#334155;}
 body.dark .stat-bar{background:#334155;}
-body.dark .order-body{padding-top:130px;border-color:#334155;}
+body.dark .order-body{border-color:#334155;}
 body.dark .dark-btn{background:#f59e0b;}
 body.dark .art-row{background:#0f172a;}
 body.dark .art-name{color:white;}
@@ -194,7 +194,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="margin-top:0;" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:80;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
@@ -237,7 +237,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 
 
 <!-- ADMIN TOOLBAR -->
-<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;position:sticky;top:0;z-index:80;">
+<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;">
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
   <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
@@ -1070,7 +1070,7 @@ function exportPDF(period){
   }));
   const sorted=Object.values(totals).sort((a,b)=>b.qty-a.qty);
   const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Bestellbericht</title>
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{padding-top:130px;font-family:Arial,sans-serif;color:#0f172a;background:white;padding:30px;font-size:13px;}
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;color:#0f172a;background:white;padding:30px;font-size:13px;}
 h1{font-size:22px;font-weight:800;color:#1a3a6b;}
 .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1a3a6b;padding-bottom:14px;margin-bottom:18px;}
 .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
@@ -1091,7 +1091,7 @@ tr:nth-child(even) td{background:#f8fafc;}
   <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
 </head><body>
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="margin-top:0;" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:80;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
@@ -1383,26 +1383,9 @@ let openingHours=null;
 
 async function loadOpeningHours(){
   try{
-    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings?key=eq.opening_hours',{
-      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'}
-    });
-    if(r.ok){
-      const data=await r.json();
-      if(data&&data.length>0){
-        openingHours=JSON.parse(data[0].value);
-        localStorage.setItem('oh_cache',JSON.stringify(openingHours));
-      } else {
-        var cached=localStorage.getItem('oh_cache');
-        if(cached) openingHours=JSON.parse(cached);
-      }
-    } else {
-      var cached=localStorage.getItem('oh_cache');
-      if(cached) openingHours=JSON.parse(cached);
-    }
-  }catch(e){
-    var cached=localStorage.getItem('oh_cache');
-    if(cached) openingHours=JSON.parse(cached);
-  }
+    const data=await api("GET","settings","?key=eq.opening_hours");
+    if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
+  }catch(e){}
   updateOpeningStatus();
   setInterval(updateOpeningStatus,60000);
 }
@@ -1447,7 +1430,7 @@ function updateOpeningStatus(){
   const banner=document.getElementById("oh-closed-banner");
   const cartBtn=document.getElementById("cart-btn");
 
-  if(!isOpen){
+  if(!isOpen&&!isAdmin){
     if(banner) banner.style.display="block";
     const ne=document.getElementById("oh-next-open");
     if(ne) ne.textContent=getNextOpenTime()?`Nächste Öffnung: ${getNextOpenTime()}`:"";
@@ -1509,20 +1492,10 @@ async function saveOpeningHours(){
   openingHours=h;
   const token=localStorage.getItem('sb_token');
   const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-  try{
-    var r = await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
-    if(r.ok){
-      localStorage.setItem('oh_cache', JSON.stringify(h));
-      closeOhAdmin();
-      updateOpeningStatus();
-      alert("✅ Gespeichert!");
-    } else {
-      var err = await r.text();
-      alert("❌ Status " + r.status + ": " + err.substring(0,100));
-    }
-  }catch(e){
-    alert("❌ Netzwerkfehler: " + e.message);
-  }
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
+  closeOhAdmin();
+  updateOpeningStatus();
+  alert("✅ Öffnungszeiten gespeichert!");
 }
 
 function openArticleAdmin(){
@@ -1854,7 +1827,7 @@ if('serviceWorker' in navigator){
 </div>
 
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="margin-top:0;" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:80;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
