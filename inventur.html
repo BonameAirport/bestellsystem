@@ -105,7 +105,7 @@ body{font-family:'Sora',sans-serif;background:#f1f5f9;min-height:100vh;padding-b
 
   <div id="tab-ek" style="display:none;">
     <div style="background:#0f172a;padding:12px 16px;">
-      <div style="font-size:14px;font-weight:800;color:#f1f5f9;">&#x1F4B6; EK-Preise &amp; Soll-Bestand</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:14px;font-weight:800;color:#f1f5f9;">&#x1F4B6; Artikel verwalten</div><button onclick="openAddArtikel()" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Hinzufügen</button></div>
     </div>
     <div style="padding:16px;" id="ek-list"></div>
   </div>
@@ -269,7 +269,7 @@ async function openKategorie(katId,katName,status,sessionId){
     await api('PATCH','inventur_session','?id=eq.'+sessionId,{gesperrt_von:_userId,gesperrt_am:new Date().toISOString()});
   }
   
-  _artikel=await api('GET','articles','?kategorie_id=eq.'+katId+'&order=name.asc')||[];
+  _artikel=await api('GET','inventur_artikel','?kategorie_id=eq.'+katId+'&aktiv=eq.true&order=name.asc')||[];
   
   if(_aktSessionId){
     var pos=await api('GET','inventur_positionen','?session_id=eq.'+_aktSessionId)||[];
@@ -382,29 +382,130 @@ function showTab(tab){
   if(tab==='ergebnisse') loadErgebnisse();
 }
 
+
+var _editArtikelId = null;
+
+function openAddArtikel(){
+  _editArtikelId = null;
+  document.getElementById('artikel-form-title').textContent = 'Artikel hinzufügen';
+  document.getElementById('af-name').value = '';
+  document.getElementById('af-einheit').value = '';
+  document.getElementById('af-ek').value = '';
+  document.getElementById('af-soll').value = '';
+  document.getElementById('af-kat').value = '';
+  document.getElementById('af-bild').value = '';
+  document.getElementById('af-err').style.display = 'none';
+  fillKatDropdown();
+  document.getElementById('artikel-form-overlay').style.display = 'flex';
+}
+
+function openEditArtikel(a){
+  _editArtikelId = a.id;
+  document.getElementById('artikel-form-title').textContent = 'Artikel bearbeiten';
+  document.getElementById('af-name').value = a.name||'';
+  document.getElementById('af-einheit').value = a.einheit||'';
+  document.getElementById('af-ek').value = a.ek_preis||'';
+  document.getElementById('af-soll').value = a.soll_bestand||'';
+  document.getElementById('af-bild').value = a.bild_url||'';
+  document.getElementById('af-err').style.display = 'none';
+  fillKatDropdown(a.kategorie_id);
+  document.getElementById('artikel-form-overlay').style.display = 'flex';
+}
+
+function fillKatDropdown(selected){
+  var sel = document.getElementById('af-kat');
+  sel.innerHTML = '<option value="">Bitte wählen...</option>';
+  _kategorien.forEach(function(k){
+    var opt = document.createElement('option');
+    opt.value = k.id;
+    opt.textContent = k.name;
+    if(selected && k.id === selected) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function closeArtikelForm(){
+  document.getElementById('artikel-form-overlay').style.display = 'none';
+}
+
+async function saveArtikelForm(){
+  var name = document.getElementById('af-name').value.trim();
+  var einheit = document.getElementById('af-einheit').value.trim();
+  var ek = parseFloat(document.getElementById('af-ek').value)||0;
+  var soll = parseInt(document.getElementById('af-soll').value)||0;
+  var katId = document.getElementById('af-kat').value;
+  var bild = document.getElementById('af-bild').value.trim();
+  var err = document.getElementById('af-err');
+  
+  if(!name){err.style.display='block';err.textContent='Bitte Artikelname eingeben.';return;}
+  if(!katId){err.style.display='block';err.textContent='Bitte Kategorie wählen.';return;}
+  
+  var body = {name:name,einheit:einheit,ek_preis:ek,soll_bestand:soll,kategorie_id:katId,bild_url:bild||null,aktiv:true};
+  
+  if(_editArtikelId){
+    await api('PATCH','inventur_artikel','?id=eq.'+_editArtikelId,body);
+  } else {
+    await api('POST','inventur_artikel','',body);
+  }
+  
+  closeArtikelForm();
+  loadEkPreise();
+}
+
+async function deleteInvArtikel(id, name){
+  if(!confirm(name+' löschen?')) return;
+  await api('DELETE','inventur_artikel','?id=eq.'+id);
+  loadEkPreise();
+}
+
 async function loadEkPreise(){
   var el=document.getElementById('ek-list');
   el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Laedt...</div>';
-  var artikel=await api('GET','articles','?order=name.asc')||[];
-  if(!artikel.length){el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Keine Artikel</div>';return;}
-  el.innerHTML=artikel.map(function(a){
-    return '<div class="ek-card">'+
-      '<img class="ek-img" src="'+(a.image_url||PLACEHOLDER)+'" onerror="this.src=PLACEHOLDER"/>'+
-      '<div style="flex:1;">'+
-        '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+a.name+'</div>'+
-        '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">Soll: <input type="number" class="soll-inp" data-id="'+a.id+'" style="width:50px;border:none;border-bottom:1px solid #e2e8f0;font-size:11px;font-family:inherit;outline:none;background:transparent;" value="'+(a.soll_bestand||0)+'"/></div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:4px;">'+
-        '<span style="font-size:13px;color:#64748b;">EUR</span>'+
-        '<input type="number" step="0.01" class="ek-inp" data-id="'+a.id+'" value="'+(a.ek_preis||'')+'" placeholder="0.00"/>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-  el.querySelectorAll('.soll-inp').forEach(function(inp){
-    inp.onchange=function(){saveField(this.dataset.id,'soll_bestand',this.value);};
+  var artikel=await api('GET','inventur_artikel','?aktiv=eq.true&order=kategorie_id.asc,name.asc')||[];
+  if(!artikel.length){
+    el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Noch keine Artikel.<br><br><button onclick="openAddArtikel()" style="background:#16a34a;color:white;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Ersten Artikel hinzufügen</button></div>';
+    return;
+  }
+  
+  var katMap={};
+  _kategorien.forEach(function(k){katMap[k.id]=k.name;});
+  
+  var grouped={};
+  artikel.forEach(function(a){
+    var kat=katMap[a.kategorie_id]||'Ohne Kategorie';
+    if(!grouped[kat]) grouped[kat]=[];
+    grouped[kat].push(a);
   });
-  el.querySelectorAll('.ek-inp').forEach(function(inp){
-    inp.onchange=function(){saveField(this.dataset.id,'ek_preis',this.value);};
+  
+  var html='';
+  Object.keys(grouped).sort().forEach(function(kat){
+    html+='<div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px;">'+kat+'</div>';
+    grouped[kat].forEach(function(a){
+      html+='<div class="ek-card">'+
+        '<img class="ek-img" src="'+(a.bild_url||PLACEHOLDER)+'" onerror="this.src=PLACEHOLDER"/>'+
+        '<div style="flex:1;">'+
+          '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+a.name+'</div>'+
+          '<div style="font-size:11px;color:#64748b;margin-top:2px;">'+(a.einheit||'–')+' · Soll: '+a.soll_bestand+' · EK: EUR '+(a.ek_preis?parseFloat(a.ek_preis).toFixed(2):'–')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;">'+
+          '<button data-id="'+a.id+'" class="edit-inv-btn" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">&#x270F;&#xFE0F;</button>'+
+          '<button data-id="'+a.id+'" data-name="'+a.name.replace(/"/g,'&quot;')+'" class="del-inv-btn" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;">&#x1F5D1;</button>'+
+        '</div>'+
+      '</div>';
+    });
+  });
+  
+  el.innerHTML=html;
+  
+  // Store artikel data for edit
+  var artikelMap={};
+  artikel.forEach(function(a){artikelMap[a.id]=a;});
+  
+  el.querySelectorAll('.edit-inv-btn').forEach(function(btn){
+    btn.onclick=function(){openEditArtikel(artikelMap[this.dataset.id]);};
+  });
+  el.querySelectorAll('.del-inv-btn').forEach(function(btn){
+    btn.onclick=function(){deleteInvArtikel(this.dataset.id,this.dataset.name);};
   });
 }
 
@@ -513,5 +614,32 @@ async function exportCSV(){
 }
 
 </script>
+
+<!-- ARTIKEL FORM -->
+<div id="artikel-form-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:white;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;">
+    <div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:16px;" id="artikel-form-title">Artikel hinzufügen</div>
+    <input type="text" id="af-name" class="inp" placeholder="Artikelname *" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:10px;"/>
+    <input type="text" id="af-einheit" class="inp" placeholder="Einheit (z.B. Kiste, Stück, kg)" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:10px;"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">EK-Preis (EUR)</div>
+        <input type="number" step="0.01" id="af-ek" class="inp" placeholder="0.00" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:0;"/>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">Soll-Bestand</div>
+        <input type="number" id="af-soll" class="inp" placeholder="0" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:0;"/>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#64748b;margin-bottom:4px;font-weight:600;">Kategorie *</div>
+    <select id="af-kat" class="inp" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:10px;">
+      <option value="">Bitte wählen...</option>
+    </select>
+    <input type="url" id="af-bild" class="inp" placeholder="Bild URL (optional)" style="background:#f8fafc;border:1.5px solid #e2e8f0;color:#0f172a;margin-bottom:14px;"/>
+    <button onclick="saveArtikelForm()" style="width:100%;background:#16a34a;color:white;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-bottom:8px;">&#x2705; Speichern</button>
+    <button onclick="closeArtikelForm()" style="width:100%;background:#f1f5f9;color:#64748b;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Abbrechen</button>
+    <div id="af-err" style="display:none;color:#dc2626;font-size:12px;text-align:center;margin-top:8px;"></div>
+  </div>
+</div>
 </body>
 </html>
