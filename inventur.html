@@ -349,7 +349,7 @@ async function abschliessenKategorie(){
     var a=_artikel[i];
     var ist=_istWerte[a.id]!==undefined?parseInt(_istWerte[a.id])||0:0;
     var soll=a.soll_bestand||0;
-    await api('POST','inventur_positionen','',{session_id:_aktSessionId,artikel_id:a.id,artikel_name:a.name,artikel_bild:a.image_url||'',ek_preis:a.ek_preis||0,soll_bestand:soll,ist_bestand:ist,differenz:ist-soll,kommentar:_kommentare[a.id]||''});
+    await api('POST','inventur_positionen','',{session_id:_aktSessionId,artikel_id:a.id,artikel_name:a.name,artikel_bild:a.image_url||'',artikel_einheit:a.unit||'',ek_preis:a.ek_preis||0,soll_bestand:soll,ist_bestand:ist,differenz:ist-soll,kommentar:_kommentare[a.id]||''});
   }
   await api('PATCH','inventur_session','?id=eq.'+_aktSessionId,{abgeschlossen_at:new Date().toISOString(),gesperrt_von:null});
   document.getElementById('artikel-page').style.display='none';
@@ -471,7 +471,7 @@ async function exportCSV(){
       rows.push([
         katName,
         p.artikel_name||'',
-        '',
+        p.artikel_einheit||'',
         p.soll_bestand||0,
         p.ist_bestand||0,
         p.differenz||0,
