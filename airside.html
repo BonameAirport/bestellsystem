@@ -1527,13 +1527,13 @@ function showMitarbeiterPage(){
     _mitQrDone=true;
     try{
       new QRCode(document.getElementById('mit-qr-small'),{
-        text:'https://airport-dus-boname.netlify.app/',
+        text:'https://airport-dus-boname.netlify.app/?register=true',
         width:80, height:80,
         colorDark:'#16a34a', colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.H
       });
       new QRCode(document.getElementById('mit-qr-large'),{
-        text:'https://airport-dus-boname.netlify.app/',
+        text:'https://airport-dus-boname.netlify.app/?register=true',
         width:220, height:220,
         colorDark:'#16a34a', colorLight:'#ffffff',
         correctLevel:QRCode.CorrectLevel.H
