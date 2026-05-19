@@ -1490,10 +1490,17 @@ async function saveOpeningHours(){
     h[day]={open,close,closed};
   });
   openingHours=h;
-  await api("PATCH","settings","?key=eq.opening_hours",{value:JSON.stringify(h)});
-  closeOhAdmin();
-  updateOpeningStatus();
-  alert("✅ Öffnungszeiten gespeichert!");
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  var r = await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
+  if(r.ok){
+    closeOhAdmin();
+    updateOpeningStatus();
+    alert("✅ Öffnungszeiten gespeichert!");
+  } else {
+    var err = await r.text();
+    alert("❌ Fehler: " + r.status + " - " + err);
+  }
 }
 
 function openArticleAdmin(){
