@@ -860,18 +860,21 @@ async function sendOrder(){
   if(!name){ alert("Bitte Namen eintragen."); return; }
   const selected=contacts.filter(c=>selPhones.includes(c.phone));
   if(!selected.length){
-    // Scroll to recipient section and open it
-    const recipientCard=document.querySelector('.recipient-header');
-    const recipientBody=document.getElementById('recipient-body');
-    if(recipientBody&&recipientBody.style.display==='none'){
-      recipientBody.style.display='block';
-      const arrow=document.getElementById('recipient-arrow');
-      if(arrow) arrow.textContent='▲';
-    }
-    if(recipientCard) recipientCard.scrollIntoView({behavior:'smooth',block:'center'});
-    // Flash red border
-    const card=recipientCard&&recipientCard.closest('.card');
-    if(card){card.style.border='2px solid #dc2626';setTimeout(function(){card.style.border='';},2000);}
+    // Close cart first
+    closeCart();
+    setTimeout(function(){
+      // Open and scroll to recipient
+      const recipientCard=document.querySelector('.recipient-header');
+      const recipientBody=document.getElementById('recipient-body');
+      if(recipientBody&&recipientBody.style.display==='none'){
+        recipientBody.style.display='block';
+        const arrow=document.getElementById('recipient-arrow');
+        if(arrow) arrow.textContent='▲';
+      }
+      if(recipientCard) recipientCard.scrollIntoView({behavior:'smooth',block:'center'});
+      const card=recipientCard&&recipientCard.closest('.card');
+      if(card){card.style.border='2px solid #dc2626';setTimeout(function(){card.style.border='';},2000);}
+    },300);
     return;
   }
   const items=Object.values(cart).map(i=>(({item:i.name,qty:String(i.qty),unit:i.unit,delivered:"",section:i.section||""})));
