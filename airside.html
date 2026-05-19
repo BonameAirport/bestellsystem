@@ -1383,8 +1383,14 @@ let openingHours=null;
 
 async function loadOpeningHours(){
   try{
-    const data=await api("GET","settings","?key=eq.opening_hours");
-    if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
+    // Use anon key directly so it works before login
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings?key=eq.opening_hours',{
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'}
+    });
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
+    }
   }catch(e){}
   updateOpeningStatus();
   setInterval(updateOpeningStatus,60000);
