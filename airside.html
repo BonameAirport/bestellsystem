@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>✈️ Airside Bestellung</title>
+<title>✈️ Airside → Lager</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{padding-top:110px;font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
+body{font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
 
 /* LOGIN */
 .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -16,12 +16,12 @@ body{padding-top:110px;font-family:'Sora',sans-serif;background:#f0f4fa;min-heig
 .login-title{font-size:20px;font-weight:800;color:#0f172a;text-align:center;margin-bottom:6px;}
 .login-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:24px;}
 .login-input{width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:13px 16px;font-size:16px;font-family:inherit;outline:none;margin-bottom:12px;}
-.login-input:focus{border-color:#2563eb;}
-.login-btn{width:100%;background:#1a3a6b;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;}
+.login-input:focus{border-color:#16a34a;}
+.login-btn{width:100%;background:#14532d;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;}
 .login-err{color:#dc2626;font-size:13px;text-align:center;display:none;margin-top:8px;}
 
 /* HEADER */
-.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;position:fixed;top:0;left:0;right:0;z-index:80;}
+.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;;position:sticky;top:0;z-index:55;}
 .header h1{font-size:22px;font-weight:800;margin-bottom:4px;}
 .header .sub{font-size:13px;color:rgba(255,255,255,0.75);}
 .lang-sw{position:absolute;top:14px;right:14px;display:flex;gap:4px;}
@@ -29,9 +29,9 @@ body{padding-top:110px;font-family:'Sora',sans-serif;background:#f0f4fa;min-heig
 .lang-btn.on{background:white;color:#0f172a;}
 
 /* TABS */
-.tabs{display:flex;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:60;}
+.tabs{display:flex;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:50;}
 .tab{flex:1;padding:13px 8px;text-align:center;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
-.tab.on{color:#2563eb;border-bottom-color:#2563eb;}
+.tab.on{color:#16a34a;border-bottom-color:#16a34a;}
 .page{display:none;}.page.on{display:block;}
 .wrap{max-width:540px;margin:0 auto;padding:16px 16px 120px;}
 
@@ -39,15 +39,15 @@ body{padding-top:110px;font-family:'Sora',sans-serif;background:#f0f4fa;min-heig
 .card{background:white;border-radius:14px;padding:16px;margin-bottom:14px;border:1.5px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,.04);}
 .lbl{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
 input[type=text],input[type=tel],textarea{width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px 14px;font-size:15px;font-family:inherit;outline:none;background:white;}
-input:focus,textarea:focus{border-color:#2563eb;}
+input:focus,textarea:focus{border-color:#16a34a;}
 textarea{min-height:70px;resize:vertical;}
-.btn-add{background:#1a3a6b;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-add{background:#14532d;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 
 /* CONTACTS */
 .contact-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;cursor:pointer;}
-.contact-item.on{border-color:#2563eb;background:#f0f7ff;}
+.contact-item.on{border-color:#16a34a;background:#f0f7ff;}
 .chk{width:20px;height:20px;border-radius:50%;border:2px solid #cbd5e1;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.contact-item.on .chk{background:#2563eb;border-color:#2563eb;}
+.contact-item.on .chk{background:#16a34a;border-color:#16a34a;}
 .chk-dot{width:8px;height:8px;background:white;border-radius:50%;display:none;}
 .contact-item.on .chk-dot{display:block;}
 .cname{font-size:14px;font-weight:700;color:#0f172a;}
@@ -64,23 +64,24 @@ textarea{min-height:70px;resize:vertical;}
 /* SEARCH */
 .search-wrap{position:relative;margin-bottom:14px;}
 .search-input{width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:11px 36px 11px 14px;font-size:14px;font-family:inherit;outline:none;background:white;color:#0f172a;}
-.search-input:focus{border-color:#2563eb;}
+.search-input:focus{border-color:#16a34a;}
 .search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;cursor:pointer;color:#94a3b8;display:none;}
 
 /* ARTICLE SECTIONS */
-.section-head{background:#1a3a6b;color:white;padding:10px 16px;border-radius:10px 10px 0 0;font-size:13px;font-weight:700;margin-top:8px;}
+.section-head{background:#14532d;color:white;padding:10px 16px;border-radius:10px 10px 0 0;font-size:13px;font-weight:700;margin-top:8px;}
 .section-body{background:white;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 10px 10px;margin-bottom:4px;overflow:hidden;}
 
 /* TEA SUBMENU */
-.tea-sub{display:none;background:#0f172a;}
+.tea-sub{display:none;background:#f8fafc;border-top:1px solid #e2e8f0;}
 .tea-sub.open{display:block;}
+body.dark .tea-sub{background:#0f172a;border-color:#334155;}
 
 /* CART BAR */
-.cnt{text-align:center;font-size:13px;color:#2563eb;font-weight:700;margin-bottom:12px;}
+.cnt{text-align:center;font-size:13px;color:#16a34a;font-weight:700;margin-bottom:12px;}
 .cart-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(to top,rgba(240,244,250,1),rgba(240,244,250,0));pointer-events:none;z-index:80;}
-.cart-btn{width:100%;background:#2563eb;color:white;border:none;border-radius:14px;padding:15px 20px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;display:none;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(0,0,0,.2);pointer-events:all;}
+.cart-btn{width:100%;background:#16a34a;color:white;border:none;border-radius:14px;padding:15px 20px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;display:none;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(0,0,0,.2);pointer-events:all;}
 .cart-btn.on{display:flex;}
-.cart-badge{background:white;color:#2563eb;border-radius:20px;padding:2px 12px;font-size:13px;font-weight:800;}
+.cart-badge{background:white;color:#16a34a;border-radius:20px;padding:2px 12px;font-size:13px;font-weight:800;}
 
 /* CART MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;display:none;}
@@ -108,13 +109,13 @@ textarea{min-height:70px;resize:vertical;}
 /* STATS */
 .stat-filter{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
 .sf-btn{padding:7px 14px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;background:white;color:#64748b;}
-.sf-btn.on{background:#1a3a6b;color:white;border-color:#1a3a6b;}
+.sf-btn.on{background:#14532d;color:white;border-color:#3730a3;}
 .stat-card{background:white;border-radius:12px;border:1.5px solid #e2e8f0;padding:16px;margin-bottom:12px;}
 .stat-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc;}
 .stat-row:last-child{border-bottom:none;}
 .stat-name{flex:1;font-size:13px;}
 .stat-bar{flex:0 0 80px;background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden;}
-.stat-fill{height:6px;background:#2563eb;border-radius:4px;}
+.stat-fill{height:6px;background:#16a34a;border-radius:4px;}
 .stat-qty{font-size:13px;font-weight:800;width:40px;text-align:right;}
 
 /* ADMIN */
@@ -136,7 +137,7 @@ textarea{min-height:70px;resize:vertical;}
 .edit-modal.on{display:flex;}
 .edit-box{background:white;border-radius:16px;padding:24px;width:100%;max-width:400px;}
 .edit-actions{display:flex;gap:8px;margin-top:8px;}
-.btn-save{flex:2;background:#1a3a6b;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
+.btn-save{flex:2;background:#14532d;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
 .btn-cancel{flex:1;background:#f1f5f9;color:#64748b;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;}
 
 /* DELIVERY */
@@ -149,7 +150,7 @@ textarea{min-height:70px;resize:vertical;}
 .d-missing.on{background:#dc2626;color:white;}
 
 /* FAB */
-.fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:#1a3a6b;color:white;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;display:flex;align-items:center;justify-content:center;}
+.fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:#14532d;color:white;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;display:flex;align-items:center;justify-content:center;}
 .dark-btn{position:fixed;bottom:24px;left:20px;width:52px;height:52px;border-radius:50%;background:#334155;color:white;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;}
 .offline-bar{display:none;background:#f59e0b;color:white;text-align:center;padding:8px;font-size:12px;font-weight:700;position:sticky;top:0;z-index:60;}
 .offline-bar.on{display:block;}
@@ -161,7 +162,7 @@ body.dark input,body.dark textarea{background:#0f172a;border-color:#334155;color
 body.dark .cname,body.dark .order-name{color:white;}
 body.dark .tabs{background:#1e293b;border-color:#334155;}
 body.dark .tab{color:#94a3b8;}
-body.dark .tab.on{color:#2563eb;}
+body.dark .tab.on{color:#16a34a;}
 body.dark .add-form{background:#0f172a;border-color:#334155;}
 body.dark .sf-btn{background:#1e293b;border-color:#334155;color:#94a3b8;}
 body.dark .stat-card{background:#1e293b;border-color:#334155;}
@@ -178,7 +179,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 .art-row{cursor:grab;transition:opacity 0.2s,transform 0.2s;}
 .art-row:active{cursor:grabbing;}
 .art-row.dragging{opacity:0.4;transform:scale(0.98);}
-.art-row.drag-over{border-top:3px solid #2563eb;}
+.art-row.drag-over{border-top:3px solid #16a34a;}
 .drag-handle{font-size:16px;color:#94a3b8;cursor:grab;padding:0 6px;flex-shrink:0;}
 
 .drag-handle{user-select:none;}
@@ -194,7 +195,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 </head>
 <body>
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:85;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
@@ -236,10 +237,8 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 </div>
 
 
-
-
 <!-- ADMIN TOOLBAR -->
-<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;position:sticky;top:0;z-index:70;">
+<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;">
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
   <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
@@ -364,7 +363,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
           <input type="text" id="new-cat-input" placeholder="z.B. 🥗 Salate" style="width:100%;border:1.5px solid #e2e8f0;border-radius:9px;padding:10px;font-size:14px;font-family:inherit;outline:none;"/>
           <div style="font-size:11px;color:#94a3b8;margin-top:4px;">Emoji + Name eingeben</div>
         </div>
-        <button onclick="addArticle()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Artikel hinzufügen</button>
+        <button onclick="addArticle()" style="width:100%;background:#14532d;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Artikel hinzufügen</button>
       </div>
       <div id="admin-art-list" style="margin-top:12px;"></div>
     </div>
@@ -394,7 +393,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
     </div>
     <div style="font-size:13px;color:#94a3b8;margin-bottom:14px;">Bitte für jeden Artikel prüfen:</div>
     <div id="delivery-items"></div>
-    <button onclick="sendDeliveryReport()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:16px;">📤 Bericht per WhatsApp senden</button>
+    <button onclick="sendDeliveryReport()" style="width:100%;background:#14532d;color:white;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:16px;">📤 Bericht per WhatsApp senden</button>
   </div>
 </div>
 
@@ -495,7 +494,7 @@ window.addEventListener("DOMContentLoaded",async()=>{
     const ps=document.getElementById('pdf-export-section');
     if(ps) ps.style.display='block';
   }
-  const c=await api("GET","contacts",`?type=eq.${TYPE}&order=created_at.asc`);
+  const c=await api("GET","contacts",`?type=eq.airside&order=created_at.asc`);
   if(c) contacts=c;
   renderContacts();
   if(localStorage.getItem("dark")==="1") applyDark(true);
@@ -566,7 +565,7 @@ async function saveContact(){
   const name=document.getElementById("new-name").value.trim();
   const phone=document.getElementById("new-phone").value.replace(/[\s\+\-\(\)]/g,"");
   if(!name||phone.length<6){ alert("Bitte Name und Nummer eingeben."); return; }
-  const saved=await api("POST","contacts","",{type:TYPE,name,phone});
+  const saved=await api("POST","contacts","",{type:"airside_lager",name,phone});
   if(saved){ contacts.push(Array.isArray(saved)?saved[0]:saved); renderContacts(); document.getElementById("add-form").classList.remove("on"); document.getElementById("new-name").value=""; document.getElementById("new-phone").value=""; }
 }
 
@@ -589,15 +588,33 @@ function renderArticles(){
   const el=document.getElementById("article-list");
   el.innerHTML="";
   const sections={};
-  articles.forEach(a=>{ if(!sections[a.section]) sections[a.section]=[]; sections[a.section].push(a); });
-  Object.entries(sections).forEach(([sec,arts])=>{
+  
+  // Separate tea items from regular articles
+  const teaArticles = articles.filter(a=>a.name.match(/^Tee \d+$/));
+  const regularArticles = articles.filter(a=>!a.name.match(/^Tee \d+$/));
+  
+  regularArticles.forEach(a=>{ if(!sections[a.section]) sections[a.section]=[]; sections[a.section].push(a); });
+  
+  const SECTION_ORDER=['❄️ TK Ware','🧊 Kühlhaus','🫙 Trockenlager','☕️ Kaffeeartikel','🥤 Getränke','🧹 Hygieneartikel'];
+  const sortedSections=Object.keys(sections).sort((a,b)=>{
+    const ai=SECTION_ORDER.indexOf(a), bi=SECTION_ORDER.indexOf(b);
+    if(ai===-1&&bi===-1) return a.localeCompare(b);
+    if(ai===-1) return 1; if(bi===-1) return -1;
+    return ai-bi;
+  });
+  sortedSections.forEach((sec)=>{ const arts=sections[sec];
     const h=document.createElement("div");
     h.className="section-head"; h.textContent=sec; h.dataset.key=sec;
     el.appendChild(h);
     const b=document.createElement("div");
     b.className="section-body";
     arts.forEach(a=>{
-      b.appendChild(makeRow(a));
+      if(a.name==='Tee (alle Sorten)'){
+        // Inject tea subitems from Supabase
+        b.appendChild(makeTeaParentRow(a, teaArticles));
+      } else {
+        b.appendChild(makeRow(a));
+      }
     });
     el.appendChild(b);
   });
@@ -622,12 +639,122 @@ function makeRow(a){
       <input type="tel" inputmode="numeric" id="qty-${a.id}" value="${qty}"
         onclick="this.select()"
         onchange="setItemQty(${a.id},this.value)"
-        style="width:${qty>=100?58:qty>=10?50:42}px;height:${qty>=100?58:qty>=10?50:42}px;border-radius:50%;background:${qty>0?'#2563eb':'transparent'};border:2px solid ${qty>0?'#2563eb':'#cbd5e1'};text-align:center;font-size:${qty>=100?12:qty>=10?13:14}px;font-weight:800;color:${qty>0?'white':'#94a3b8'};outline:none;font-family:inherit;cursor:pointer;transition:all 0.2s;"/>
+        style="width:${qty>=100?58:qty>=10?50:42}px;height:${qty>=100?58:qty>=10?50:42}px;border-radius:50%;background:${qty>0?'#16a34a':'transparent'};border:2px solid ${qty>0?'#16a34a':'#cbd5e1'};text-align:center;font-size:${qty>=100?12:qty>=10?13:14}px;font-weight:800;color:${qty>0?'white':'#94a3b8'};outline:none;font-family:inherit;cursor:pointer;transition:all 0.2s;"/>
       <button onclick="changeItemQty(${a.id},-1)" style="width:34px;height:26px;border:none;background:transparent;font-size:20px;color:#64748b;cursor:pointer;">−</button>
     </div>`;
   return r;
 }
 
+
+function makeTeaParentRow(a, teaArticles){
+  const wrapper=document.createElement('div');
+  const isDark=document.body.classList.contains('dark');
+  const img=a.image_url
+    ?`<img src="${a.image_url}" style="width:52px;height:52px;border-radius:12px;object-fit:cover;flex-shrink:0;"/>`
+    :`<div style="width:52px;height:52px;border-radius:12px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🍵</div>`;
+  wrapper.innerHTML=`
+    <div onclick="toggleTeaMenu(event)" style="display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.08);gap:12px;cursor:pointer;">
+      ${img}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:${isDark?'#f1f5f9':'#0f172a'};margin-bottom:2px;">
+          Tee (alle Sorten) <span id="tea-arrow" style="font-size:12px;color:#64748b;">▼</span>
+        </div>
+        <div style="font-size:12px;color:#64748b;">Packung · Tippen zum Aufklappen</div>
+      </div>
+    </div>
+    <div id="tea-submenu" class="tea-sub">
+      <div id="tea-items"></div>
+    </div>`;
+  // Render tea items from Supabase
+  setTimeout(()=>{
+    const el = wrapper.querySelector('#tea-items');
+    if(el && teaArticles){
+      el.innerHTML='';
+      teaArticles.forEach(t => el.appendChild(makeTeaRowFromArticle(t)));
+    }
+  }, 50);
+  return wrapper;
+}
+
+const TEA_ITEMS = [
+  {"id":"tea1","name":"Tee 1","unit":"Packung","image_url":null},
+  {"id":"tea2","name":"Tee 2","unit":"Packung","image_url":null},
+  {"id":"tea3","name":"Tee 3","unit":"Packung","image_url":null},
+  {"id":"tea4","name":"Tee 4","unit":"Packung","image_url":null},
+  {"id":"tea5","name":"Tee 5","unit":"Packung","image_url":null},
+  {"id":"tea6","name":"Tee 6","unit":"Packung","image_url":null},
+  {"id":"tea7","name":"Tee 7","unit":"Packung","image_url":null},
+  {"id":"tea8","name":"Tee 8","unit":"Packung","image_url":null}
+];
+
+function toggleTeaMenu(e){
+  e.stopPropagation();
+  const sub=document.getElementById('tea-submenu');
+  const arrow=document.getElementById('tea-arrow');
+  if(!sub) return;
+  const open=sub.classList.contains('open');
+  sub.classList.toggle('open',!open);
+  if(arrow) arrow.textContent=open?'▼':'▲';
+}
+
+function makeTeaRow(tea, idx){
+  const qty=cart[tea.id]?cart[tea.id].qty:0;
+  const r=document.createElement('div');
+  r.style.cssText='display:flex;align-items:center;padding:10px 14px 10px 20px;border-bottom:1px solid rgba(255,255,255,0.06);gap:10px;';
+  const isDark=document.body.classList.contains('dark');
+  const imgHtml=tea.image_url
+    ?`<img src="${tea.image_url}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;"/>`
+    :`<div style="width:40px;height:40px;border-radius:8px;background:${isDark?'#334155':'#e2e8f0'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🍵</div>`;
+  
+  const adminBtns = isAdmin ? `
+    <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadTeaImg(this,'${tea.id}')"/></label>
+    <button onclick="editTeaName(${idx})" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">✏️</button>
+    <button onclick="deleteTeaItem('${tea.id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">🗑</button>
+  ` : '';
+
+  r.innerHTML=`
+    ${imgHtml}
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:600;color:${isDark?'#f1f5f9':'#0f172a'};">${tea.name}</div>
+      <div style="font-size:11px;color:#64748b;">${tea.unit}</div>
+    </div>
+    ${adminBtns}
+    <div style="display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;">
+      <button onclick="changeTeaQty('${tea.id}',1)" style="width:28px;height:22px;border:none;background:transparent;font-size:16px;color:#64748b;cursor:pointer;">+</button>
+      <div id="qty-${tea.id}" style="width:36px;height:36px;border-radius:50%;background:${qty>0?'#16a34a':'transparent'};border:2px solid ${qty>0?'#16a34a':'#6b7280'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:${qty>0?'white':'#6b7280'};">${qty}</div>
+      <button onclick="changeTeaQty('${tea.id}',-1)" style="width:28px;height:22px;border:none;background:transparent;font-size:16px;color:#64748b;cursor:pointer;">−</button>
+    </div>`;
+  return r;
+}
+
+
+function renderTeaSubmenu(){
+  const el=document.getElementById('tea-items');
+  if(!el) return;
+  el.innerHTML='';
+  TEA_ITEMS.forEach((t,i)=>el.appendChild(makeTeaRow(t,i)));
+}
+
+function changeTeaQty(id,delta){
+  const tea=TEA_ITEMS.find(t=>t.id===id);
+  if(!tea) return;
+  if(!cart[id]) cart[id]={id,name:tea.name,unit:'Packung',qty:0};
+  cart[id].qty=Math.max(0,cart[id].qty+delta);
+  if(cart[id].qty<=0) delete cart[id];
+  updateCartUI();
+  const badge=document.getElementById('qty-'+id);
+  if(badge){
+    const q=cart[id]?cart[id].qty:0;
+    if(badge.tagName==='INPUT') badge.value=q; else badge.textContent=q;
+    const sz=q>=100?58:q>=10?50:42;
+    badge.style.width=sz+'px';
+    badge.style.height=sz+'px';
+    badge.style.fontSize=(q>=100?12:q>=10?13:14)+'px';
+    badge.style.background=q>0?'#16a34a':'transparent';
+    badge.style.border=q>0?'2px solid #16a34a':'2px solid #cbd5e1';
+    badge.style.color=q>0?'white':'#94a3b8';
+  }
+}
 
 
 function changeItemQty(id,delta){
@@ -645,8 +772,8 @@ function changeItemQty(id,delta){
     badge.style.width=sz+'px';
     badge.style.height=sz+'px';
     badge.style.fontSize=(q>=100?12:q>=10?13:14)+'px';
-    badge.style.background=q>0?'#2563eb':'transparent';
-    badge.style.border=q>0?'2px solid #2563eb':'2px solid #cbd5e1';
+    badge.style.background=q>0?'#16a34a':'transparent';
+    badge.style.border=q>0?'2px solid #16a34a':'2px solid #cbd5e1';
     badge.style.color=q>0?'white':'#94a3b8';
   }
 }
@@ -728,7 +855,7 @@ function renderCart(){
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <button onclick="changeQty(${it.id},-1)" style="width:32px;height:32px;border-radius:8px;border:1.5px solid ${borderColor};background:${bgColor};color:${textColor};font-size:18px;cursor:pointer;font-family:inherit;">−</button>
         <input type="tel" value="${it.qty}" onchange="setQty(${it.id},this.value)" onclick="this.select()" style="width:42px;height:32px;text-align:center;border:1.5px solid ${borderColor};border-radius:8px;font-size:15px;font-weight:800;font-family:inherit;outline:none;background:${bgColor};color:${textColor};"/>
-        <button onclick="changeQty(${it.id},1)" style="width:32px;height:32px;border-radius:8px;border:none;background:#2563eb;color:white;font-size:18px;cursor:pointer;font-family:inherit;">+</button>
+        <button onclick="changeQty(${it.id},1)" style="width:32px;height:32px;border-radius:8px;border:none;background:#16a34a;color:white;font-size:18px;cursor:pointer;font-family:inherit;">+</button>
         <button onclick="removeFromCart(${it.id})" style="width:32px;height:32px;border-radius:8px;background:#fee2e2;color:#dc2626;border:none;font-size:14px;cursor:pointer;font-family:inherit;">✕</button>
       </div>
     </div>`;
@@ -773,7 +900,7 @@ async function sendOrder(){
   const note=document.getElementById("note").value.trim();
   const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
   await api("POST","orders","",{type:TYPE,orderer:name,items,note,date:now,status:"offen",contacts:selected.map(c=>(({name:c.name,phone:c.phone}))),status_time:""});
-  let msg=`🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LANDSIDE*\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
+  let msg=`🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LAGER*\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
   items.forEach(i=>msg+=`▸ ${i.item}: *${i.qty} ${i.unit}*\n`);
   if(note) msg+=`\n📝 ${note}\n`;
   msg+=`\n━━━━━━━━━━━━━━━━━━━━\nBitte bestätigen ✅\n🔗 https://airport-dus-boname.netlify.app/empfaenger.html`;
@@ -835,7 +962,7 @@ async function loadStats(){
   const sorted=Object.values(totals).sort((a,b)=>b.qty-a.qty);
   const maxQ=sorted.length?sorted[0].qty:1;
   if(!sorted.length){ el.innerHTML='<div style="text-align:center;padding:40px;color:#94a3b8;">📭 Keine Daten</div>'; return; }
-  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"><div class="stat-card" style="text-align:center;"><div style="font-size:24px;font-weight:800;color:#2563eb">${filtered.length}</div><div style="font-size:12px;color:#64748b;">Bestellungen</div></div><div class="stat-card" style="text-align:center;"><div style="font-size:24px;font-weight:800;color:#2563eb">${sorted.length}</div><div style="font-size:12px;color:#64748b;">Artikel</div></div></div><div class="stat-card"><div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:12px;">📦 Bestellte Artikel</div>${sorted.map(a=>`<div class="stat-row"><span class="stat-name">${a.name}</span><div class="stat-bar"><div class="stat-fill" style="width:${Math.round(a.qty/maxQ*100)}%"></div></div><span class="stat-qty">${a.qty}</span></div>`).join("")}</div>`;
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;"><div class="stat-card" style="text-align:center;"><div style="font-size:24px;font-weight:800;color:#16a34a">${filtered.length}</div><div style="font-size:12px;color:#64748b;">Bestellungen</div></div><div class="stat-card" style="text-align:center;"><div style="font-size:24px;font-weight:800;color:#16a34a">${sorted.length}</div><div style="font-size:12px;color:#64748b;">Artikel</div></div></div><div class="stat-card"><div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:12px;">📦 Bestellte Artikel</div>${sorted.map(a=>`<div class="stat-row"><span class="stat-name">${a.name}</span><div class="stat-bar"><div class="stat-fill" style="width:${Math.round(a.qty/maxQ*100)}%"></div></div><span class="stat-qty">${a.qty}</span></div>`).join("")}</div>`;
 }
 
 function setStatFilter(f,btn){
@@ -873,11 +1000,9 @@ function adminLogout(){
 }
 
 async function loadAdminArticles(){
+  populateCategorySelect();
   const el=document.getElementById("admin-art-list"); el.innerHTML="";
   const data=await api("GET","articles",`?type=eq.${TYPE}&order=section.asc,name.asc`)||[];
-  // Update categories from loaded articles
-  categories=[...new Set(data.map(a=>a.section).filter(Boolean))];
-  populateCategorySelect();
   const sections={};
   data.forEach(a=>{ if(!sections[a.section]) sections[a.section]=[]; sections[a.section].push(a); });
   Object.entries(sections).forEach(([sec,arts])=>{
@@ -977,7 +1102,6 @@ function openDelivery(orderId){
           <span style="font-size:12px;color:#64748b;">${item.unit||''}</span>
           <span id="diff-${key}" style="font-size:12px;font-weight:700;color:#dc2626;"></span>
         </div>
-      <div id="admin-art-list"></div>
       </div>
     </div>`;
   }).join('');
@@ -1038,7 +1162,7 @@ async function sendDeliveryReport(){
     return {item:item.item,unit:item.unit||'',ordered,delivered,diff};
   });
   const hasMissing=results.some(r=>r.diff>0);
-  let msg=`✅ *WARENEINGANG BESTÄTIGT*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LANDSIDE*\n👤 ${order.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+  let msg=`✅ *WARENEINGANG BESTÄTIGT*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LAGER*\n👤 ${order.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n`;
   results.forEach(r=>{ msg+=r.diff<=0?`✅ ${r.item}: ${r.ordered} ${r.unit}\n`:`⚠️ ${r.item}: ${r.delivered}/${r.ordered} ${r.unit} (${r.diff} fehlt)\n`; });
   msg+=`\n━━━━━━━━━━━━━━━━━━━━\nDanke! 👍`;
   const newStatus=hasMissing?'fehler':'angekommen';
@@ -1073,19 +1197,19 @@ function exportPDF(period){
   const sorted=Object.values(totals).sort((a,b)=>b.qty-a.qty);
   const html=`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"/><title>Bestellbericht</title>
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;color:#0f172a;background:white;padding:30px;font-size:13px;}
-h1{font-size:22px;font-weight:800;color:#1a3a6b;}
-.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1a3a6b;padding-bottom:14px;margin-bottom:18px;}
+h1{font-size:22px;font-weight:800;color:#3730a3;}
+.header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #14532d;padding-bottom:14px;margin-bottom:18px;}
 .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;}
 .sum-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;}
-.sum-num{font-size:24px;font-weight:800;color:#1a3a6b;}
+.sum-num{font-size:24px;font-weight:800;color:#3730a3;}
 .sum-lbl{font-size:11px;color:#64748b;margin-top:2px;}
-h2{font-size:14px;font-weight:700;color:#1a3a6b;border-bottom:2px solid #1a3a6b;padding-bottom:5px;margin:18px 0 10px;}
+h2{font-size:14px;font-weight:700;color:#3730a3;border-bottom:2px solid #14532d;padding-bottom:5px;margin:18px 0 10px;}
 table{width:100%;border-collapse:collapse;}
-th{background:#1a3a6b;color:white;padding:8px 12px;text-align:left;font-size:12px;}
+th{background:#14532d;color:white;padding:8px 12px;text-align:left;font-size:12px;}
 td{padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:12px;}
 tr:nth-child(even) td{background:#f8fafc;}
 .footer{margin-top:22px;padding-top:10px;border-top:1px solid #e2e8f0;text-align:center;font-size:11px;color:#94a3b8;}
-.print-btn{display:block;margin:18px auto 0;background:#1a3a6b;color:white;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
+.print-btn{display:block;margin:18px auto 0;background:#14532d;color:white;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;}
 @media print{.print-btn{display:none;}}
 </style>  <link rel="manifest" href="/manifest.json"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -1093,11 +1217,11 @@ tr:nth-child(even) td{background:#f8fafc;}
   <meta name="apple-mobile-web-app-title" content="Bestellsystem"/>
 </head><body>
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:85;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
-<div class="header"><div><h1>🍽️ bona'me Restaurant</h1><div style="font-size:13px;color:#64748b;margin-top:4px;">Airside Bestellbericht – ${periodLabel}</div></div>
+<div class="header"><div><h1>🍽️ bona'me Restaurant</h1><div style="font-size:13px;color:#64748b;margin-top:4px;">Lager Bestellbericht – ${periodLabel}</div></div>
 <div style="text-align:right;font-size:12px;color:#64748b;">Erstellt: ${now.toLocaleString('de-DE')}</div></div>
 <div class="sum">
 <div class="sum-box"><div class="sum-num">${filtered.length}</div><div class="sum-lbl">Bestellungen</div></div>
@@ -1115,6 +1239,19 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
 <div class="footer">bona'me Flughafen · ${now.toLocaleDateString('de-DE')}</div>
 <button class="print-btn" onclick="window.print()">🖨️ Als PDF drucken</button>
 
+<!-- TEA ADMIN MODAL -->
+<div class="admin-modal" id="tea-admin-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">🍵 Teesorten verwalten</span>
+      <button onclick="closeTeaAdmin()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Tippe auf ✏️ um den Namen zu ändern</div>
+    <div id="tea-admin-list"></div>
+  </div>
+</div>
+
+
 <!-- OH ADMIN MODAL -->
 <div class="admin-modal" id="oh-admin-modal">
   <div class="admin-sheet">
@@ -1123,7 +1260,7 @@ ${filtered.map(o=>`<tr><td style="white-space:nowrap;">${o.date}</td><td><b>${o.
       <button onclick="closeOhAdmin()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
     </div>
     <div id="oh-admin-content"></div>
-    <button onclick="saveOpeningHours()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
+    <button onclick="saveOpeningHours()" style="width:100%;background:#3730a3;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
   </div>
 </div>
 </body></html>`;
@@ -1180,6 +1317,12 @@ function updateLangUI(){
   document.getElementById("lbl-items-selected").textContent=lb.selected;
 }
 
+function openTeaAdmin(){const modal=document.getElementById('tea-admin-modal');if(modal){modal.classList.add('on');renderTeaAdmin();}}
+function closeTeaAdmin(){const modal=document.getElementById('tea-admin-modal');if(modal)modal.classList.remove('on');}
+function renderTeaAdmin(){const el=document.getElementById('tea-admin-list');if(!el)return;el.innerHTML=TEA_ITEMS.map((t,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;"><span style="flex:1;font-size:14px;font-weight:700;color:#0f172a;">${t.name}</span><button onclick="editTeaName(${i})" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✏️</button></div>`).join('');}
+function editTeaName(idx){const newName=prompt('Name ändern:',TEA_ITEMS[idx].name);if(newName&&newName.trim()){TEA_ITEMS[idx].name=newName.trim();renderTeaAdmin();renderTeaSubmenu();localStorage.setItem('tea_items',JSON.stringify(TEA_ITEMS));}}
+(function(){const s=localStorage.getItem('tea_items');if(s)try{const p=JSON.parse(s);p.forEach((t,i)=>{if(TEA_ITEMS[i])TEA_ITEMS[i].name=t.name;});}catch(e){}})();
+
 function setItemQty(id, val){
   const n = parseInt(val);
   const art = articles.find(a=>a.id===id);
@@ -1200,10 +1343,41 @@ function setItemQty(id, val){
     badge.style.width=sz+'px';
     badge.style.height=sz+'px';
     badge.style.fontSize=(q>=100?12:q>=10?13:14)+'px';
-    badge.style.background=q>0?'#2563eb':'transparent';
-    badge.style.border=q>0?'2px solid #2563eb':'2px solid #cbd5e1';
+    badge.style.background=q>0?'#16a34a':'transparent';
+    badge.style.border=q>0?'2px solid #16a34a':'2px solid #cbd5e1';
     badge.style.color=q>0?'white':'#94a3b8';
   }
+}
+
+function uploadTeaImg(input, teaId){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e){
+    const base64 = e.target.result.split(',')[1];
+    const path = `tea_${teaId}_${Date.now()}.${file.name.split('.').pop()}`;
+    const r = await fetch(`${SB_URL}/storage/v1/object/artikel-bilder/${path}`, {
+      method: 'POST',
+      headers: {'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Content-Type': file.type},
+      body: file
+    });
+    if(r.ok){
+      const url = `${SB_URL}/storage/v1/object/public/artikel-bilder/${path}`;
+      const idx = TEA_ITEMS.findIndex(t=>t.id===teaId);
+      if(idx>=0){ TEA_ITEMS[idx].image_url = url; }
+      localStorage.setItem('tea_items', JSON.stringify(TEA_ITEMS));
+      renderTeaSubmenu();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteTeaItem(teaId){
+  if(!confirm('Teesorte löschen?')) return;
+  const idx = TEA_ITEMS.findIndex(t=>t.id===teaId);
+  if(idx>=0){ TEA_ITEMS.splice(idx, 1); }
+  localStorage.setItem('tea_items', JSON.stringify(TEA_ITEMS));
+  renderTeaSubmenu();
 }
 
 function moveArticle(id, direction){
@@ -1336,6 +1510,39 @@ function initAdminDrag(){
       _dragClone = null;
     });
   });
+}
+
+function makeTeaRowFromArticle(a){
+  const qty=cart[a.id]?cart[a.id].qty:0;
+  const isDark=document.body.classList.contains('dark');
+  const r=document.createElement('div');
+  r.style.cssText='display:flex;align-items:center;padding:10px 14px 10px 20px;border-bottom:1px solid rgba(255,255,255,0.06);gap:10px;';
+  
+  const imgHtml=a.image_url
+    ?`<img src="${a.image_url}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;"/>`
+    :`<div style="width:40px;height:40px;border-radius:8px;background:${isDark?'#334155':'#e2e8f0'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🍵</div>`;
+
+  const adminBtns = isAdmin ? `
+    <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImg(this,${a.id},'${a.name}')"/></label>
+    <button onclick="openEdit(${a.id},'${a.name}','${a.unit}')" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">✏️</button>
+    <button onclick="deleteArticle(${a.id},'${a.name}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">🗑</button>
+  ` : '';
+
+  r.innerHTML=`
+    ${imgHtml}
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:600;color:${isDark?'#f1f5f9':'#0f172a'};">${a.name}</div>
+      <div style="font-size:11px;color:#64748b;">${a.unit}</div>
+    </div>
+    ${adminBtns}
+    <div style="display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;">
+      <button onclick="changeItemQty(${a.id},1)" style="width:28px;height:22px;border:none;background:transparent;font-size:16px;color:#64748b;cursor:pointer;">+</button>
+      <input type="tel" inputmode="numeric" id="qty-${a.id}" value="${qty}"
+        onclick="this.select()" onchange="setItemQty(${a.id},this.value)"
+        style="width:36px;height:36px;border-radius:50%;background:${qty>0?'#16a34a':'transparent'};border:2px solid ${qty>0?'#16a34a':'#6b7280'};text-align:center;font-size:13px;font-weight:800;color:${qty>0?'white':'#6b7280'};outline:none;font-family:inherit;cursor:pointer;"/>
+      <button onclick="changeItemQty(${a.id},-1)" style="width:28px;height:22px;border:none;background:transparent;font-size:16px;color:#64748b;cursor:pointer;">−</button>
+    </div>`;
+  return r;
 }
 
 // ─── CATEGORIES ──────────────────────────────────────────
@@ -1492,9 +1699,7 @@ async function saveOpeningHours(){
     h[day]={open,close,closed};
   });
   openingHours=h;
-  const token=localStorage.getItem('sb_token');
-  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
-  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
+  await api("PATCH","settings","?key=eq.opening_hours",{value:JSON.stringify(h)});
   closeOhAdmin();
   updateOpeningStatus();
   alert("✅ Öffnungszeiten gespeichert!");
@@ -1816,6 +2021,19 @@ if('serviceWorker' in navigator){
 }
 </script>
 
+<!-- TEA ADMIN MODAL -->
+<div class="admin-modal" id="tea-admin-modal">
+  <div class="admin-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">🍵 Teesorten verwalten</span>
+      <button onclick="closeTeaAdmin()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Tippe auf ✏️ um den Namen zu ändern</div>
+    <div id="tea-admin-list"></div>
+  </div>
+</div>
+
+
 <!-- OH ADMIN MODAL -->
 <div class="admin-modal" id="oh-admin-modal">
   <div class="admin-sheet">
@@ -1824,12 +2042,12 @@ if('serviceWorker' in navigator){
       <button onclick="closeOhAdmin()" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;">✕</button>
     </div>
     <div id="oh-admin-content"></div>
-    <button onclick="saveOpeningHours()" style="width:100%;background:#1a3a6b;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
+    <button onclick="saveOpeningHours()" style="width:100%;background:#3730a3;color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;">💾 Speichern</button>
   </div>
 </div>
 
 <!-- OH CLOSED BANNER -->
-<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:fixed;top:0;left:0;right:0;z-index:85;">
+<div id="oh-closed-banner" style="display:none;background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:12px 20px;text-align:center;position:sticky;top:0;z-index:70;">
   <div style="font-size:14px;font-weight:800;color:white;">🔒 Geschlossen – Keine Bestellungen möglich</div>
   <div id="oh-next-open" style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:3px;"></div>
 </div>
