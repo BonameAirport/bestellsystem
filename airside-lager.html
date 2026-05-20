@@ -78,7 +78,7 @@ body.dark .tea-sub{background:#0f172a;border-color:#334155;}
 
 /* CART BAR */
 .cnt{text-align:center;font-size:13px;color:#16a34a;font-weight:700;margin-bottom:12px;}
-.cart-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(to top,rgba(240,244,250,1),rgba(240,244,250,0));pointer-events:none;z-index:80;}
+.cart-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;z-index:81;background:linear-gradient(to top,rgba(240,244,250,1),rgba(240,244,250,0));pointer-events:none;z-index:80;}
 .cart-btn{width:100%;background:#16a34a;color:white;border:none;border-radius:14px;padding:15px 20px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;display:none;align-items:center;justify-content:space-between;box-shadow:0 6px 20px rgba(0,0,0,.2);pointer-events:all;}
 .cart-btn.on{display:flex;}
 .cart-badge{background:white;color:#16a34a;border-radius:20px;padding:2px 12px;font-size:13px;font-weight:800;}
@@ -150,8 +150,8 @@ body.dark .tea-sub{background:#0f172a;border-color:#334155;}
 .d-missing.on{background:#dc2626;color:white;}
 
 /* FAB */
-.fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:#14532d;color:white;border:none;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;display:flex;align-items:center;justify-content:center;}
-.dark-btn{position:fixed;bottom:24px;left:20px;width:52px;height:52px;border-radius:50%;background:#334155;color:white;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;}
+.fab{position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:#14532d;color:white;border:none;font-size:22px;z-index:80;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;display:flex;align-items:center;justify-content:center;}
+.dark-btn{position:fixed;bottom:24px;left:20px;width:52px;height:52px;border-radius:50%;background:#334155;color:white;border:none;font-size:20px;z-index:80;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:90;}
 .offline-bar{display:none;background:#f59e0b;color:white;text-align:center;padding:8px;font-size:12px;font-weight:700;position:sticky;top:0;z-index:60;}
 .offline-bar.on{display:block;}
 
@@ -1592,9 +1592,26 @@ let openingHours=null;
 
 async function loadOpeningHours(){
   try{
-    const data=await api("GET","settings","?key=eq.opening_hours");
-    if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
-  }catch(e){}
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings?key=eq.opening_hours',{
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'}
+    });
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.length>0){
+        openingHours=JSON.parse(data[0].value);
+        localStorage.setItem('oh_cache',JSON.stringify(openingHours));
+      } else {
+        const cached=localStorage.getItem('oh_cache');
+        if(cached) openingHours=JSON.parse(cached);
+      }
+    } else {
+      const cached=localStorage.getItem('oh_cache');
+      if(cached) openingHours=JSON.parse(cached);
+    }
+  }catch(e){
+    const cached=localStorage.getItem('oh_cache');
+    if(cached) openingHours=JSON.parse(cached);
+  }
   updateOpeningStatus();
   setInterval(updateOpeningStatus,60000);
 }
@@ -1699,10 +1716,22 @@ async function saveOpeningHours(){
     h[day]={open,close,closed};
   });
   openingHours=h;
-  await api("PATCH","settings","?key=eq.opening_hours",{value:JSON.stringify(h)});
-  closeOhAdmin();
-  updateOpeningStatus();
-  alert("✅ Öffnungszeiten gespeichert!");
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  try{
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
+    if(r.ok){
+      localStorage.setItem('oh_cache',JSON.stringify(h));
+      closeOhAdmin();
+      updateOpeningStatus();
+      alert("✅ Öffnungszeiten gespeichert!");
+    } else {
+      const err=await r.text();
+      alert("❌ Fehler: "+r.status+" - "+err.substring(0,100));
+    }
+  }catch(e){
+    alert("❌ Netzwerkfehler: "+e.message);
+  }
 }
 
 function openArticleAdmin(){
