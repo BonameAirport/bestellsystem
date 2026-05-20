@@ -900,10 +900,10 @@ async function sendOrder(){
   const note=document.getElementById("note").value.trim();
   const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
   await api("POST","orders","",{type:TYPE,orderer:name,items,note,date:now,status:"offen",contacts:selected.map(c=>(({name:c.name,phone:c.phone}))),status_time:""});
-  let msg=`🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LAGER*\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
+  let msg=`🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LANDSIDE 🏠*\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
   items.forEach(i=>msg+=`▸ ${i.item}: *${i.qty} ${i.unit}*\n`);
   if(note) msg+=`\n📝 ${note}\n`;
-  msg+=`\n━━━━━━━━━━━━━━━━━━━━\nBitte bestätigen ✅\n🔗 https://airport-dus-boname.netlify.app/empfaenger.html`;
+  msg+=`\n━━━━━━━━━━━━━━━━━━━━\nBitte bestätigen ✅\n🔗 https://airport-dus-boname.netlify.app/airside-empfaenger.html`;
   closeCart();
   cart={};
   updateCartUI();
@@ -1162,7 +1162,7 @@ async function sendDeliveryReport(){
     return {item:item.item,unit:item.unit||'',ordered,delivered,diff};
   });
   const hasMissing=results.some(r=>r.diff>0);
-  let msg=`✅ *WARENEINGANG BESTÄTIGT*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LAGER*\n👤 ${order.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+  let msg=`✅ *WARENEINGANG BESTÄTIGT*\n━━━━━━━━━━━━━━━━━━━━\n✈️ *AIRSIDE → LANDSIDE 🏠*\n👤 ${order.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n`;
   results.forEach(r=>{ msg+=r.diff<=0?`✅ ${r.item}: ${r.ordered} ${r.unit}\n`:`⚠️ ${r.item}: ${r.delivered}/${r.ordered} ${r.unit} (${r.diff} fehlt)\n`; });
   msg+=`\n━━━━━━━━━━━━━━━━━━━━\nDanke! 👍`;
   const newStatus=hasMissing?'fehler':'angekommen';
