@@ -117,6 +117,11 @@ async function loadOrders(){
   try{
     const data=await api("GET","orders","?type=eq.airside&order=created_at.desc");
     if(data===null){
+      if(allOrders.length>0){renderOrders();return;}
+      wrap.innerHTML='<div class="wrap"><div class="empty">⚠️ Kein Internet – letzte Bestellungen werden angezeigt</div></div>';
+      return;
+    }
+    if(false){
       wrap.innerHTML='<div class="wrap"><div class="empty">❌ Verbindungsfehler – bitte Seite neu laden</div></div>';
       return;
     }

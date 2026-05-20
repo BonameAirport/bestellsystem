@@ -126,6 +126,11 @@ async function loadOrders(){
   try{
     const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
     if(data===null){
+      if(allOrders.length>0){renderOrders();return;}
+      wrap.innerHTML='<div class="wrap"><div class="empty">⚠️ Kein Internet – letzte Bestellungen werden angezeigt</div></div>';
+      return;
+    }
+    if(false){
       wrap.innerHTML='<div class="wrap"><div class="empty">❌ Verbindungsfehler – bitte Seite neu laden</div></div>';
       return;
     }
@@ -173,7 +178,7 @@ function renderList(){
   wrap.innerHTML='<div class="wrap">'+filtered.map(o=>{
     const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
     const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-done',fehler:'b-offen'}[o.status]||'b-offen';
-    const typeLabel=o.type==='lager'?'📦 Landside → Lager':'✈️ Airside → Lager';
+    const typeLabel=o.type==='lager'?'🏠 Landside → Lager 📦':'✈️ Airside → Lager 📦';
     const typeClass=o.type==='lager'?'type-lager':'type-airside';
     const preview=o.items.slice(0,3).map(i=>`${i.item||i.name}: ${i.qty} ${i.unit||''}`).join(' · ')+(o.items.length>3?` +${o.items.length-3} mehr`:'');
     const isDone=['angekommen','fehler'].includes(o.status);
@@ -205,7 +210,7 @@ function showDetail(id){
 
   const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
   const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-done',fehler:'b-offen'}[o.status]||'b-offen';
-  const typeLabel=o.type==='lager'?'📦 Landside → Lager':'✈️ Airside → Lager';
+  const typeLabel=o.type==='lager'?'🏠 Landside → Lager 📦':'✈️ Airside → Lager 📦';
 
   // Group items by lager section
   const grouped={};
