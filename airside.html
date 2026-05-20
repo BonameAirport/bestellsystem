@@ -1592,9 +1592,26 @@ let openingHours=null;
 
 async function loadOpeningHours(){
   try{
-    const data=await api("GET","settings","?key=eq.opening_hours");
-    if(data&&data.length>0) openingHours=JSON.parse(data[0].value);
-  }catch(e){}
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings?key=eq.opening_hours',{
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'}
+    });
+    if(r.ok){
+      const data=await r.json();
+      if(data&&data.length>0){
+        openingHours=JSON.parse(data[0].value);
+        localStorage.setItem('oh_cache',JSON.stringify(openingHours));
+      } else {
+        const cached=localStorage.getItem('oh_cache');
+        if(cached) openingHours=JSON.parse(cached);
+      }
+    } else {
+      const cached=localStorage.getItem('oh_cache');
+      if(cached) openingHours=JSON.parse(cached);
+    }
+  }catch(e){
+    const cached=localStorage.getItem('oh_cache');
+    if(cached) openingHours=JSON.parse(cached);
+  }
   updateOpeningStatus();
   setInterval(updateOpeningStatus,60000);
 }
@@ -1699,10 +1716,22 @@ async function saveOpeningHours(){
     h[day]={open,close,closed};
   });
   openingHours=h;
-  await api("PATCH","settings","?key=eq.opening_hours",{value:JSON.stringify(h)});
-  closeOhAdmin();
-  updateOpeningStatus();
-  alert("✅ Öffnungszeiten gespeichert!");
+  const token=localStorage.getItem('sb_token');
+  const headers={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+  try{
+    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/settings',{method:'POST',headers:headers,body:JSON.stringify({key:'opening_hours',value:JSON.stringify(h)})});
+    if(r.ok){
+      localStorage.setItem('oh_cache',JSON.stringify(h));
+      closeOhAdmin();
+      updateOpeningStatus();
+      alert("✅ Öffnungszeiten gespeichert!");
+    } else {
+      const err=await r.text();
+      alert("❌ Fehler: "+r.status+" - "+err.substring(0,100));
+    }
+  }catch(e){
+    alert("❌ Netzwerkfehler: "+e.message);
+  }
 }
 
 function openArticleAdmin(){
