@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
+body{padding-top:110px;font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
 
 /* LOGIN */
 .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -21,7 +21,7 @@ body{font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
 .login-err{color:#dc2626;font-size:13px;text-align:center;display:none;margin-top:8px;}
 
 /* HEADER */
-.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;}
+.header{background:linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af);padding:28px 20px 20px;color:white;text-align:center;position:fixed;top:0;left:0;right:0;z-index:80;}
 .header h1{font-size:22px;font-weight:800;margin-bottom:4px;}
 .header .sub{font-size:13px;color:rgba(255,255,255,0.75);}
 .lang-sw{position:absolute;top:14px;right:14px;display:flex;gap:4px;}
@@ -29,7 +29,7 @@ body{font-family:'Sora',sans-serif;background:#f0f4fa;min-height:100vh;}
 .lang-btn.on{background:white;color:#0f172a;}
 
 /* TABS */
-.tabs{display:flex;background:white;border-bottom:2px solid #e2e8f0;}
+.tabs{display:flex;background:white;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:60;}
 .tab{flex:1;padding:13px 8px;text-align:center;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;}
 .tab.on{color:#2563eb;border-bottom-color:#2563eb;}
 .page{display:none;}.page.on{display:block;}
@@ -221,7 +221,6 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
   </div>
 </div>
 
-<div style="position:sticky;top:0;z-index:55;">
 <div class="header">
   <div style="display:flex;justify-content:flex-start;margin-bottom:14px;">
     <a href="/index.html" style="display:inline-flex;align-items:center;gap:6px;color:white;text-decoration:none;font-size:13px;font-weight:700;font-family:'Sora',sans-serif;background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.3);border-radius:20px;padding:8px 16px;">&#8592; Übersicht</a>
@@ -240,7 +239,7 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
 
 
 <!-- ADMIN TOOLBAR -->
-<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:0;border-bottom:1px solid #334155;"><div style="display:flex;flex-direction:row;gap:8px;overflow-x:auto;padding:10px 16px;">
+<div id="admin-toolbar" style="display:none;background:#1e3a5f;padding:10px 16px;flex-direction:row;gap:8px;overflow-x:auto;border-bottom:1px solid #334155;position:sticky;top:0;z-index:70;">
   <button onclick="openArticleAdmin()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📦 Artikel</button>
   <button onclick="openOhAdmin()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🕐 Öffnungszeiten</button>
   <button onclick="openArchiveModal()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Archiv</button>
@@ -248,11 +247,10 @@ body.dark .pdf-section button{background:#0f172a;border-color:#334155;color:#94a
   <button onclick="showMitarbeiterPage()" style="background:#0369a1;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">&#128101; Mitarbeiter</button>
   <button onclick="window.open('https://b2b.gvsgroup.de/customer/account/login/referer/aHR0cHM6Ly9iMmIuZ3ZzZ3JvdXAuZGUvY2hlY2tvdXQvY2FydC9pbmRleC8_X19fU0lEPVU,/','_blank')" style="background:#f59e0b;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🛒 GVS</button>
   <button onclick="adminLogout()" style="background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">🚪 Logout</button>
-</div></div>
+</div>
 
 <div class="tabs">
   <div class="tab on" id="tab-order" onclick="showTab('order')">➕ Bestellen</div>
-</div>
   <div class="tab" id="tab-history" onclick="showTab('history')">📋 Verlauf</div>
   <div class="tab" id="tab-stats" style="display:none" onclick="showTab('stats')">📊 Statistik</div>
 </div>
