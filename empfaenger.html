@@ -422,6 +422,16 @@ async function doLogin(){
     if(data.access_token){
       saveSession(data);
       localStorage.setItem('emp_token',data.access_token);
+      // Check rolle
+      const userId2=JSON.parse(atob(data.access_token.split('.')[1])).sub;
+      if(userId2 !== 'dbeecae7-3b37-4c66-91fd-820fe6e55ac1'){
+        const rr=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId2+'&select=status,rolle',{
+          headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+data.access_token}
+        });
+        const rd=await rr.json();
+        if(!rd||!rd.length||rd[0].status!=='aktiv'){err.style.display='block';err.textContent='Kein Zugriff.';return;}
+        if(!['lager','admin'].includes(rd[0].rolle||'')){err.style.display='block';err.textContent='Keine Berechtigung für diese Seite.';return;}
+      }
       localStorage.setItem('emp_session',(Date.now()+8*3600000).toString());
       document.getElementById('login-screen').style.display='none';
       loadOrders();

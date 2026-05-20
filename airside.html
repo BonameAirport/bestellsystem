@@ -1853,55 +1853,133 @@ async function deleteUser(id, name){
 async function loadMitarbeiterPage(){
   var el=document.getElementById('mit-list');
   if(!el) return;
-  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">⏳ Lädt...</div>';
+  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">Laedt...</div>';
   var token=localStorage.getItem('sb_token');
   var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   var users=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];});
-  // Debug
-  if(users && users.code === 'PGRST301' || (users && users.message && users.message.includes('expired'))) {
-    localStorage.removeItem('sb_token');
-    localStorage.removeItem('app_session');
-    location.reload();
-    return;
-  }
-  if(users && users.code) { alert('API Fehler: ' + users.message); users=[]; }
+  if(users&&(users.code==='PGRST301'||(users.message&&users.message.includes('expired')))){localStorage.removeItem('sb_token');localStorage.removeItem('app_session');location.reload();return;}
+  if(users&&users.code){alert('API Fehler: '+users.message);users=[];}
   users=users||[];
-  
   var countEl=document.getElementById('mit-count');
   if(countEl) countEl.textContent=users.length+' Mitarbeiter';
-  
-  if(!users.length){
-    el.innerHTML='<div style="text-align:center;padding:30px;color:#64748b;">Keine Mitarbeiter registriert</div>';
-    return;
+
+  var admins=users.filter(function(u){return u.status==='aktiv'&&u.rolle==='admin';});
+  var besteller=users.filter(function(u){return u.status==='aktiv'&&(u.rolle==='airside'||u.rolle==='besteller');});
+  var lager=users.filter(function(u){return u.status==='aktiv'&&u.rolle==='lager';});
+  var anfragen=users.filter(function(u){return u.status==='ausstehend';});
+  var abgelehnt=users.filter(function(u){return u.status==='abgelehnt';});
+
+  function rolleLabel(r){return r==='admin'?'🔴 Admin':r==='lager'?'🟡 Lager':'🔵 Besteller';}
+
+  function rolleSelect(id,cur){
+    return '<select data-rolle-id="'+id+'" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;background:white;color:#0f172a;">'+
+      '<option value="" disabled'+((!cur||cur==='')?' selected':'')+'>Rolle waehlen</option>'+
+      '<option value="airside"'+(cur==='airside'||cur==='besteller'?' selected':'')+'>Besteller</option>'+
+      '<option value="lager"'+(cur==='lager'?' selected':'')+'>Lager</option>'+
+      '<option value="admin"'+(cur==='admin'?' selected':'')+'>Admin</option>'+
+      '</select>';
   }
-  
-  var statusColor={ausstehend:'#f59e0b',aktiv:'#16a34a',abgelehnt:'#dc2626'};
-  var statusBg={ausstehend:'#fef3c7',aktiv:'#d1fae5',abgelehnt:'#fee2e2'};
-  
-  el.innerHTML=users.map(function(u){
-    var sColor=statusColor[u.status]||'#64748b';
-    var sBg=statusBg[u.status]||'#f1f5f9';
+
+  function activeCard(u){
     var date=u.created_at?new Date(u.created_at).toLocaleDateString('de-DE'):'';
-    return '<div style="background:white;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #e2e8f0;">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'+
+    return '<div style="background:white;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:8px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="width:36px;height:36px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>'+
         '<div>'+
-          '<div style="font-size:14px;font-weight:700;color:#0f172a;">'+(u.full_name||'Unbekannt')+'</div>'+
-          '<div style="font-size:12px;color:#64748b;">'+(u.email||'')+'</div>'+
-          '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">'+date+'</div>'+
+          '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+(u.full_name||'Unbekannt')+'</div>'+
+          '<div style="font-size:11px;color:#94a3b8;">'+date+'</div>'+
         '</div>'+
-        '<span style="background:'+sBg+';color:'+sColor+';padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">'+u.status+'</span>'+
       '</div>'+
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
-        (u.status==='ausstehend'?
-          '<button onclick="approveUser(\''+u.id+'\',\''+u.user_id+'\',\''+(u.full_name||'').replace(/'/g,'')+'\')" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ Annehmen</button>'+
-          '<button onclick="rejectUser(\''+u.id+'\',\''+(u.full_name||'').replace(/'/g,'')+'\')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">❌ Ablehnen</button>':'')+
-        (u.status==='abgelehnt'?
-          '<button onclick="approveUser(\''+u.id+'\',\''+u.user_id+'\',\''+(u.full_name||'').replace(/'/g,'')+'\')" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ Doch annehmen</button>':'')+
-        '<button onclick="openMitEdit(\''+u.id+'\',\''+(u.full_name||'').replace(/'/g,'')+'\',\''+(u.email||'').replace(/'/g,'')+'\')" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">✏️ Bearbeiten</button>'+
-        '<button onclick="deleteUser(\''+u.id+'\',\''+(u.full_name||'').replace(/'/g,'')+'\')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">🗑 Löschen</button>'+
+      '<div style="display:flex;align-items:center;gap:6px;">'+
+        rolleSelect(u.id,u.rolle)+
+        '<button data-action="save-rolle" data-id="'+u.id+'" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">💾</button>'+
+        '<button data-action="delete" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'+
       '</div>'+
     '</div>';
-  }).join('');
+  }
+
+  function requestCard(u){
+    var date=u.created_at?new Date(u.created_at).toLocaleDateString('de-DE'):'';
+    return '<div style="background:white;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid #fde68a;">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+
+        '<div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>'+
+        '<div>'+
+          '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+(u.full_name||'Unbekannt')+'</div>'+
+          '<div style="font-size:11px;color:#64748b;">'+(u.email||'')+'</div>'+
+          '<div style="font-size:11px;color:#94a3b8;">'+date+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+
+        rolleSelect(u.id,'')+
+        '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Annehmen</button>'+
+        '<button data-action="reject" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">❌ Ablehnen</button>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function section(title, color, items, cardFn){
+    if(!items.length) return '';
+    return '<div style="margin-bottom:16px;">'+
+      '<div style="font-size:11px;font-weight:800;color:'+color+';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding:0 2px;">'+title+' ('+items.length+')</div>'+
+      items.map(cardFn).join('')+
+    '</div>';
+  }
+
+  var html='';
+  html+=section('⏳ Anfragen','#f59e0b',anfragen,requestCard);
+  html+=section('🔴 Admin','#dc2626',admins,activeCard);
+  html+=section('🔵 Besteller','#1d4ed8',besteller,activeCard);
+  html+=section('🟡 Lager','#d97706',lager,activeCard);
+  if(abgelehnt.length){
+    html+='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">❌ Abgelehnt ('+abgelehnt.length+')</div>'+
+      abgelehnt.map(function(u){
+        return '<div style="background:#f8fafc;border-radius:14px;padding:12px 14px;margin-bottom:8px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">'+
+          '<div style="font-size:13px;color:#64748b;">'+(u.full_name||'Unbekannt')+'</div>'+
+          '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">Doch annehmen</button>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  if(!html) html='<div style="text-align:center;padding:30px;color:#94a3b8;">Keine Mitarbeiter registriert</div>';
+  el.innerHTML=html;
+
+  el.onclick=function(e){
+    var btn=e.target.closest('[data-action]');
+    if(!btn) return;
+    var action=btn.dataset.action;
+    var id=btn.dataset.id;
+    var uid=btn.dataset.uid;
+    var name=decodeURIComponent(btn.dataset.name||'');
+    var rolleEl=el.querySelector('[data-rolle-id="'+id+'"]');
+    var rolle=rolleEl?rolleEl.value:'airside';
+    if(action==='approve'){
+      if(!rolle){alert('Bitte zuerst eine Rolle auswaehlen!');return;}
+      approveUserWithRolle(id,uid,name,rolle);
+    }
+    else if(action==='reject') rejectUser(id,name);
+    else if(action==='delete') deleteUser(id,name);
+    else if(action==='save-rolle'){
+      if(!rolle){alert('Bitte eine Rolle auswaehlen!');return;}
+      updateRolle(id,rolle);
+    }
+  };
+}
+
+async function approveUserWithRolle(id,userId,name,rolle){
+  if(!confirm(name+' als '+rolle+' freischalten?')) return;
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?id=eq.'+id,{method:'PATCH',headers:h,body:JSON.stringify({status:'aktiv',rolle:rolle})});
+  loadMitarbeiterPage();
+}
+
+async function updateRolle(id,rolle){
+  var token=localStorage.getItem('sb_token');
+  var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
+  await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?id=eq.'+id,{method:'PATCH',headers:h,body:JSON.stringify({rolle:rolle})});
+  alert('Rolle gespeichert!');
+  loadMitarbeiterPage();
 }
 
 
@@ -1982,34 +2060,24 @@ const ANON_KEY_AC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 async function checkAccess(){
   var token = getToken();
   if(!token){ location.reload(); return; }
-
-  // Get user ID from token
   try{
     var payload = JSON.parse(atob(token.split('.')[1]));
     var userId = payload.sub;
-
-    // Owner always has access
-    if(userId === OWNER_ID) return;
-
-    // Check status in pending_users
-    var r = await fetch(SB_URL_AC + '/rest/v1/pending_users?user_id=eq.' + userId + '&select=status', {
-      headers: {'apikey': ANON_KEY_AC, 'Authorization': 'Bearer ' + token}
+    if(userId === 'dbeecae7-3b37-4c66-91fd-820fe6e55ac1') return;
+    var r = await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?user_id=eq.'+userId+'&select=status,rolle',{
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token}
     });
     var data = await r.json();
-
-    if(!data || !data.length){
-      // Not in pending_users - new user, show pending message
-      showAccessDenied('ausstehend');
-      return;
-    }
-
+    if(!data||!data.length){ showAccessDenied('ausstehend'); return; }
     var status = data[0].status;
-    if(status !== 'aktiv'){
-      showAccessDenied(status);
+    var rolle = data[0].rolle || 'airside';
+    if(status !== 'aktiv'){ showAccessDenied(status); return; }
+    var allowed = ['airside','admin'];
+    if(!allowed.includes(rolle)){
+      showAccessDenied('keine_berechtigung');
       return;
     }
   }catch(e){
-    // Token parse error - reload
     clearSession();
     location.reload();
   }
@@ -2018,6 +2086,8 @@ async function checkAccess(){
 function showAccessDenied(status){
   var msg = status === 'ausstehend'
     ? '⏳ Dein Konto wartet auf Freischaltung durch einen Administrator.'
+    : status === 'keine_berechtigung'
+    ? '⛔ Du hast keine Berechtigung für diese Seite. Bitte wende dich an einen Administrator.'
     : '❌ Dein Konto wurde abgelehnt. Bitte wende dich an einen Administrator.';
 
   var screen = document.getElementById('login-screen');
