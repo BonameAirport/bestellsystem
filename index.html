@@ -136,6 +136,8 @@ window.addEventListener('DOMContentLoaded', function(){
 function closeReg(){document.getElementById('reg-modal').classList.remove('on');}
 
 async function doRegister(){
+  if(window._isRegistering) return;
+  window._isRegistering = true;
   const first = document.getElementById('reg-first').value.trim();
   const last  = document.getElementById('reg-last').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -161,6 +163,7 @@ async function doRegister(){
     if(!userId) {
       err.style.display='block';
       err.textContent = '❌ ' + (data.msg || data.message || 'Fehler bei der Registrierung.');
+      window._isRegistering = false;
       return;
     }
 
@@ -186,6 +189,7 @@ async function doRegister(){
   } catch(e) {
     err.style.display='block';
     err.textContent = '❌ Verbindungsfehler. Bitte erneut versuchen.';
+    window._isRegistering = false;
   }
 }
 
