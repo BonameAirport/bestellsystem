@@ -1852,114 +1852,161 @@ async function loadMitarbeiterPage(){
   var token=localStorage.getItem('sb_token');
   var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   var users=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?order=created_at.desc',{headers:h}).then(function(r){return r.json();}).catch(function(){return [];});
-  if(users&&(users.code==='PGRST301'||(users.message&&users.message.includes('expired')))){localStorage.removeItem('sb_token');localStorage.removeItem('app_session');location.reload();return;}
-  if(users&&users.code){alert('API Fehler: '+users.message);users=[];}
-  users=users||[];
+  if(!Array.isArray(users)){users=[];}
   var countEl=document.getElementById('mit-count');
   if(countEl) countEl.textContent=users.length+' Mitarbeiter';
 
-  var admins=users.filter(function(u){return u.status==='aktiv'&&u.rolle==='admin';});
-  var besteller=users.filter(function(u){return u.status==='aktiv'&&(u.rolle==='airside'||u.rolle==='besteller');});
-  var lager=users.filter(function(u){return u.status==='aktiv'&&u.rolle==='lager';});
-  var anfragen=users.filter(function(u){return u.status==='ausstehend';});
-  var abgelehnt=users.filter(function(u){return u.status==='abgelehnt';});
+  // Search/filter state
+  var _search='', _filter='all';
 
-  function rolleLabel(r){return r==='admin'?'🔴 Admin':r==='lager'?'🟡 Lager':'🔵 Besteller';}
+  function rolleLabel(r){return r==='admin'?'Admin':r==='lager'?'Lager':'Besteller';}
+  function rolleColor(r){return r==='admin'?'#dc2626':r==='lager'?'#d97706':'#1d4ed8';}
+  function rolleEmoji(r){return r==='admin'?'🔴':r==='lager'?'🟡':'🔵';}
+  function statusColor(s){return s==='aktiv'?'#16a34a':s==='ausstehend'?'#f59e0b':'#94a3b8';}
+  function statusLabel(s){return s==='aktiv'?'Aktiv':s==='ausstehend'?'Ausstehend':'Abgelehnt';}
+  function initials(n){var p=(n||'?').split(' ');return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
+  function avatarColor(n){var colors=['#6366f1','#8b5cf6','#ec4899','#f97316','#14b8a6','#0ea5e9'];var i=((n||'').charCodeAt(0)||0)%colors.length;return colors[i];}
 
   function rolleSelect(id,cur){
-    return '<select data-rolle-id="'+id+'" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;background:white;color:#0f172a;">'+
-      '<option value="" disabled'+((!cur||cur==='')?' selected':'')+'>Rolle waehlen</option>'+
-      '<option value="airside"'+(cur==='airside'||cur==='besteller'?' selected':'')+'>Besteller</option>'+
-      '<option value="lager"'+(cur==='lager'?' selected':'')+'>Lager</option>'+
-      '<option value="admin"'+(cur==='admin'?' selected':'')+'>Admin</option>'+
+    return '<select data-rolle-id="'+id+'" style="border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;background:white;color:#0f172a;width:100%;margin-bottom:8px;">'+
+      '<option value="" disabled'+((!cur||cur==='')?' selected':'')+'>Rolle wählen...</option>'+
+      '<option value="airside"'+(cur==='airside'||cur==='besteller'?' selected':'')+'>🔵 Besteller</option>'+
+      '<option value="lager"'+(cur==='lager'?' selected':'')+'>🟡 Lager</option>'+
+      '<option value="admin"'+(cur==='admin'?' selected':'')+'>🔴 Admin</option>'+
       '</select>';
   }
 
-  function activeCard(u){
-    var date=u.created_at?new Date(u.created_at).toLocaleDateString('de-DE'):'';
-    return '<div style="background:white;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:8px;">'+
-      '<div style="display:flex;align-items:center;gap:10px;">'+
-        '<div style="width:36px;height:36px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>'+
-        '<div>'+
-          '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+(u.full_name||'Unbekannt')+'</div>'+
-          '<div style="font-size:11px;color:#94a3b8;">'+date+'</div>'+
-        '</div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;">'+
-        rolleSelect(u.id,u.rolle)+
-        '<button data-action="save-rolle" data-id="'+u.id+'" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">💾</button>'+
-        '<button data-action="delete" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:700;cursor:pointer;">🗑</button>'+
-      '</div>'+
-    '</div>';
-  }
+  function renderList(){
+    var filtered=users.filter(function(u){
+      var matchSearch=!_search||(u.full_name||'').toLowerCase().includes(_search)||(u.email||'').toLowerCase().includes(_search);
+      var matchFilter=_filter==='all'||u.status===_filter;
+      return matchSearch&&matchFilter;
+    });
 
-  function requestCard(u){
-    var date=u.created_at?new Date(u.created_at).toLocaleDateString('de-DE'):'';
-    return '<div style="background:white;border-radius:14px;padding:14px;margin-bottom:8px;border:1px solid #fde68a;">'+
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'+
-        '<div style="width:36px;height:36px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>'+
-        '<div>'+
-          '<div style="font-size:13px;font-weight:700;color:#0f172a;">'+(u.full_name||'Unbekannt')+'</div>'+
-          '<div style="font-size:11px;color:#64748b;">'+(u.email||'')+'</div>'+
-          '<div style="font-size:11px;color:#94a3b8;">'+date+'</div>'+
-        '</div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+
-        rolleSelect(u.id,'')+
-        '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">✅ Annehmen</button>'+
-        '<button data-action="reject" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">❌ Ablehnen</button>'+
-      '</div>'+
-    '</div>';
-  }
+    var anfragen=filtered.filter(function(u){return u.status==='ausstehend';});
+    var aktiv=filtered.filter(function(u){return u.status==='aktiv';});
+    var abgelehnt=filtered.filter(function(u){return u.status==='abgelehnt';});
+    var admins=aktiv.filter(function(u){return u.rolle==='admin';});
+    var besteller=aktiv.filter(function(u){return u.rolle==='airside'||u.rolle==='besteller'||!u.rolle;});
+    var lager=aktiv.filter(function(u){return u.rolle==='lager';});
 
-  function section(title, color, items, cardFn){
-    if(!items.length) return '';
-    return '<div style="margin-bottom:16px;">'+
-      '<div style="font-size:11px;font-weight:800;color:'+color+';text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;padding:0 2px;">'+title+' ('+items.length+')</div>'+
-      items.map(cardFn).join('')+
-    '</div>';
-  }
+    var html='';
 
-  var html='';
-  html+=section('⏳ Anfragen','#f59e0b',anfragen,requestCard);
-  html+=section('🔴 Admin','#dc2626',admins,activeCard);
-  html+=section('🔵 Besteller','#1d4ed8',besteller,activeCard);
-  html+=section('🟡 Lager','#d97706',lager,activeCard);
-  if(abgelehnt.length){
-    html+='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">❌ Abgelehnt ('+abgelehnt.length+')</div>'+
-      abgelehnt.map(function(u){
-        return '<div style="background:#f8fafc;border-radius:14px;padding:12px 14px;margin-bottom:8px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">'+
-          '<div style="font-size:13px;color:#64748b;">'+(u.full_name||'Unbekannt')+'</div>'+
-          '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;">Doch annehmen</button>'+
+    // ANFRAGEN
+    if(anfragen.length){
+      html+='<div style="font-size:11px;font-weight:800;color:#f59e0b;text-transform:uppercase;letter-spacing:0.8px;margin:0 0 8px;padding:0 2px;">⏳ Anfragen ('+anfragen.length+')</div>';
+      anfragen.forEach(function(u){
+        html+='<div style="background:white;border-radius:16px;padding:14px;margin-bottom:8px;border:1.5px solid #fde68a;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'+
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'+
+            '<div style="width:42px;height:42px;border-radius:50%;background:'+avatarColor(u.full_name)+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;flex-shrink:0;">'+initials(u.full_name)+'</div>'+
+            '<div style="flex:1;min-width:0;">'+
+              '<div style="font-size:14px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(u.full_name||'Unbekannt')+'</div>'+
+              '<div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(u.email||'')+'</div>'+
+            '</div>'+
+            '<span style="background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0;">⏳ Ausstehend</span>'+
+          '</div>'+
+          rolleSelect(u.id,'')+
+          '<div style="display:flex;gap:8px;">'+
+            '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="flex:1;background:#d1fae5;color:#065f46;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">✅ Annehmen</button>'+
+            '<button data-action="reject" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="flex:1;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">❌ Ablehnen</button>'+
+          '</div>'+
         '</div>';
-      }).join('')+
-    '</div>';
+      });
+    }
+
+    function activeSection(title, color, list){
+      if(!list.length) return '';
+      var s='<div style="font-size:11px;font-weight:800;color:'+color+';text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 8px;padding:0 2px;">'+title+' ('+list.length+')</div>';
+      list.forEach(function(u){
+        s+='<div style="background:white;border-radius:16px;padding:12px 14px;margin-bottom:8px;border:1px solid #f1f5f9;box-shadow:0 1px 4px rgba(0,0,0,0.05);display:flex;align-items:center;gap:12px;" data-user-id="'+u.id+'">'+
+          '<div style="width:42px;height:42px;border-radius:50%;background:'+avatarColor(u.full_name)+';display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:white;flex-shrink:0;">'+initials(u.full_name)+'</div>'+
+          '<div style="flex:1;min-width:0;">'+
+            '<div style="font-size:14px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(u.full_name||'Unbekannt')+'</div>'+
+            '<div style="font-size:12px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(u.email||'')+'</div>'+
+            '<div style="font-size:11px;font-weight:600;color:'+rolleColor(u.rolle)+';margin-top:2px;">'+rolleEmoji(u.rolle)+' '+rolleLabel(u.rolle)+'</div>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'+
+            '<span style="background:#f0fdf4;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">● Aktiv</span>'+
+            '<button data-action="menu" data-id="'+u.id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" data-email="'+encodeURIComponent(u.email||'')+'" data-rolle="'+(u.rolle||'airside')+'" style="background:#f1f5f9;border:none;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">⋯</button>'+
+          '</div>'+
+        '</div>';
+      });
+      return s;
+    }
+
+    html+=activeSection('🔴 Admin','#dc2626',admins);
+    html+=activeSection('🔵 Besteller','#1d4ed8',besteller);
+    html+=activeSection('🟡 Lager','#d97706',lager);
+
+    if(abgelehnt.length){
+      html+='<div style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.8px;margin:12px 0 8px;">❌ Abgelehnt ('+abgelehnt.length+')</div>';
+      abgelehnt.forEach(function(u){
+        html+='<div style="background:#f8fafc;border-radius:14px;padding:12px 14px;margin-bottom:8px;border:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;">'+
+          '<div style="width:36px;height:36px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#94a3b8;">'+initials(u.full_name)+'</div>'+
+          '<div style="flex:1;min-width:0;">'+
+            '<div style="font-size:13px;font-weight:700;color:#64748b;">'+(u.full_name||'Unbekannt')+'</div>'+
+            '<div style="font-size:11px;color:#94a3b8;">'+(u.email||'')+'</div>'+
+          '</div>'+
+          '<button data-action="approve" data-id="'+u.id+'" data-uid="'+u.user_id+'" data-name="'+encodeURIComponent(u.full_name||'')+'" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">Doch annehmen</button>'+
+        '</div>';
+      });
+    }
+
+    if(!html) html='<div style="text-align:center;padding:40px;color:#94a3b8;font-size:13px;">Keine Mitarbeiter gefunden</div>';
+    el.innerHTML=html;
+
+    // Action menu overlay
+    el.onclick=function(e){
+      var btn=e.target.closest('[data-action]');
+      if(!btn) return;
+      var action=btn.dataset.action;
+      var id=btn.dataset.id;
+      var uid=btn.dataset.uid;
+      var name=decodeURIComponent(btn.dataset.name||'');
+      var email=decodeURIComponent(btn.dataset.email||'');
+      var rolle=btn.dataset.rolle||'airside';
+      var rolleEl=el.querySelector('[data-rolle-id="'+id+'"]');
+      var selectedRolle=rolleEl?rolleEl.value:rolle;
+
+      if(action==='approve'){
+        if(!selectedRolle){alert('Bitte zuerst eine Rolle auswählen!');return;}
+        approveUserWithRolle(id,uid,name,selectedRolle);
+      } else if(action==='reject'){
+        rejectUser(id,name);
+      } else if(action==='delete'){
+        deleteUser(id,name);
+      } else if(action==='save-rolle'){
+        if(!selectedRolle){alert('Bitte eine Rolle auswählen!');return;}
+        updateRolle(id,selectedRolle);
+      } else if(action==='menu'){
+        showMitMenu(id,name,email,rolle);
+      }
+    };
   }
 
-  if(!html) html='<div style="text-align:center;padding:30px;color:#94a3b8;">Keine Mitarbeiter registriert</div>';
-  el.innerHTML=html;
+  // Search
+  var searchEl=document.getElementById('mit-search');
+  if(searchEl){
+    searchEl.oninput=function(){_search=this.value.toLowerCase();renderList();};
+  }
+  // Filter buttons
+  ['all','ausstehend','aktiv','abgelehnt'].forEach(function(f){
+    var btn=document.getElementById('mit-filter-'+f);
+    if(btn) btn.onclick=function(){
+      _filter=f;
+      ['all','ausstehend','aktiv','abgelehnt'].forEach(function(x){
+        var b=document.getElementById('mit-filter-'+x);
+        if(b) b.style.background=x===f?'#0f172a':'#f1f5f9';
+        if(b) b.style.color=x===f?'white':'#64748b';
+      });
+      renderList();
+    };
+  });
 
-  el.onclick=function(e){
-    var btn=e.target.closest('[data-action]');
-    if(!btn) return;
-    var action=btn.dataset.action;
-    var id=btn.dataset.id;
-    var uid=btn.dataset.uid;
-    var name=decodeURIComponent(btn.dataset.name||'');
-    var rolleEl=el.querySelector('[data-rolle-id="'+id+'"]');
-    var rolle=rolleEl?rolleEl.value:'airside';
-    if(action==='approve'){
-      if(!rolle){alert('Bitte zuerst eine Rolle auswaehlen!');return;}
-      approveUserWithRolle(id,uid,name,rolle);
-    }
-    else if(action==='reject') rejectUser(id,name);
-    else if(action==='delete') deleteUser(id,name);
-    else if(action==='save-rolle'){
-      if(!rolle){alert('Bitte eine Rolle auswaehlen!');return;}
-      updateRolle(id,rolle);
-    }
-  };
+  renderList();
 }
+
+
 
 async function approveUserWithRolle(id,userId,name,rolle){
   if(!confirm(name+' als '+rolle+' freischalten?')) return;
@@ -1973,7 +2020,7 @@ async function updateRolle(id,rolle){
   var token=localStorage.getItem('sb_token');
   var h={'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'};
   await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/rest/v1/pending_users?id=eq.'+id,{method:'PATCH',headers:h,body:JSON.stringify({rolle:rolle})});
-  alert('Rolle gespeichert!');
+  alert('✅ Rolle gespeichert!');
   loadMitarbeiterPage();
 }
 
