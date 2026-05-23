@@ -166,7 +166,8 @@ input, textarea, select { font-family: inherit; }
   color: var(--text-inverse);
   text-align: center;
   position: sticky; top: 0;
-  z-index: 75;
+  z-index: 80;
+  will-change: transform;
 }
 .header h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
 .header .sub { font-size: 13px; color: rgba(255,255,255,0.75); }
@@ -178,8 +179,9 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   background: var(--bg-card);
   border-bottom: 2px solid var(--border);
-  position: sticky; top: 0;
-  z-index: 50;
+  position: sticky;
+  top: var(--header-height, 88px);
+  z-index: 79;
 }
 .tab {
   flex: 1;
@@ -663,7 +665,7 @@ textarea { min-height: 70px; resize: vertical; }
 <!-- ═════════════════════════════════════════════════════════════════
      MAIN APP
      ═════════════════════════════════════════════════════════════════ -->
-<div id="main-wrap" style="display:none;">
+<div id="main-wrap" style="display:none;min-height:100vh;">
 
   <!-- Header -->
   <header class="header">
@@ -789,7 +791,10 @@ textarea { min-height: 70px; resize: vertical; }
     <!-- Header -->
     <div class="admin-header">
       <div class="admin-header-title">⚙️ Artikel verwalten</div>
-      <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕ Schließen</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-warning btn-sm" onclick="window.PdfExport.open()">📄 PDF Export</button>
+        <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕</button>
+      </div>
     </div>
 
     <!-- ─── Neuen Artikel hinzufügen ─── -->
@@ -846,6 +851,7 @@ textarea { min-height: 70px; resize: vertical; }
 <script src="config-airside.js"></script>
 <script src="app-core.js"></script>
 <script src="admin.js"></script>
+<script src="pdf-export.js"></script>
 <script src="app.js"></script>
 
 </body>
