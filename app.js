@@ -114,6 +114,14 @@
     });
     $('send-order-btn').addEventListener('click', sendOrder);
 
+    // Admin Modal
+    $('admin-close-btn').addEventListener('click', () => window.Admin.close());
+    $('admin-modal').addEventListener('click', e => { if(e.target.id === 'admin-modal') window.Admin.close(); });
+    $('admin-add-btn').addEventListener('click', () => window.AdminActions.addArticle());
+    $('admin-cat-select').addEventListener('change', () => window.AdminActions.handleCategorySelectChange());
+    $('admin-save-edit-btn').addEventListener('click', () => window.AdminActions.saveEdit());
+    $('admin-cancel-edit-btn').addEventListener('click', () => window.AdminActions.closeEditForm());
+
     // Event-Delegation für dynamische Buttons (Artikel-Plus/Minus, Kontakt-Auswahl, etc.)
     document.body.addEventListener('click', handleDelegatedClicks);
   }
@@ -899,15 +907,9 @@
 
   function handleAdminClick(){
     const { isAdmin, isAuthenticated } = getState();
-    if(!isAuthenticated){
-      Toast.warning('Bitte zuerst anmelden');
-      return;
-    }
-    if(isAdmin){
-      Toast.info('Admin-Panel öffnen (TODO: in v3 implementieren)');
-    } else {
-      Toast.warning('Keine Admin-Rechte – Account muss als Admin freigeschaltet werden');
-    }
+    if(!isAuthenticated){ Toast.warning('Bitte zuerst anmelden'); return; }
+    if(!isAdmin){ Toast.warning('Keine Admin-Rechte'); return; }
+    window.Admin.open();
   }
 
 
@@ -933,5 +935,8 @@
   } else {
     init();
   }
+
+  // Admin.js kann renderArticles aufrufen nach Änderungen
+  window._renderArticles = renderArticles;
 
 })();

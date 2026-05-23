@@ -531,6 +531,99 @@ textarea { min-height: 70px; resize: vertical; }
 .loading-skeleton .skel-text { flex: 1; height: 14px; }
 
 /* ═════════════════════════════════════════════════════════════════
+   ADMIN PANEL
+   ═════════════════════════════════════════════════════════════════ */
+.admin-modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+}
+.admin-modal.on { display: flex; animation: fadeIn var(--t-base); }
+
+.admin-sheet {
+  background: var(--bg-card);
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: slideUp var(--t-base);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.admin-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: var(--bg-card);
+  z-index: 5;
+}
+.admin-header-title { font-size: 16px; font-weight: 800; color: var(--text-primary); }
+
+.admin-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-section-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+/* Artikel-Zeile im Admin */
+.admin-art-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t-fast), opacity var(--t-fast);
+  border-radius: var(--r-sm);
+}
+.admin-art-row:last-child { border-bottom: none; }
+.admin-art-row.inactive { opacity: 0.5; }
+.admin-art-row[draggable]:hover { background: var(--bg-soft); }
+
+.admin-section-head {
+  font-size: 11px; font-weight: 800;
+  color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 8px 4px 4px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.admin-section-head:first-child { border-top: none; margin-top: 0; }
+
+.drag-handle {
+  font-size: 20px; color: var(--text-muted);
+  cursor: grab; padding: 0 2px;
+  user-select: none; flex-shrink: 0;
+  touch-action: none;
+}
+.drag-handle:active { cursor: grabbing; }
+
+/* Edit-Form */
+.admin-edit-form {
+  background: var(--tint-info);
+  border: 1.5px solid var(--status-info);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-top: 12px;
+  display: none;
+}
+
+/* Skeleton */
+.admin-skeleton {
+  height: 52px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border) 50%, var(--bg-soft) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--r-md);
+}
+
+/* ═════════════════════════════════════════════════════════════════
    OFFLINE BAR
    ═════════════════════════════════════════════════════════════════ */
 .offline-bar {
@@ -688,6 +781,62 @@ textarea { min-height: 70px; resize: vertical; }
 </div>
 
 <!-- ═════════════════════════════════════════════════════════════════
+     ADMIN MODAL
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="admin-modal" id="admin-modal">
+  <div class="admin-sheet">
+
+    <!-- Header -->
+    <div class="admin-header">
+      <div class="admin-header-title">⚙️ Artikel verwalten</div>
+      <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕ Schließen</button>
+    </div>
+
+    <!-- ─── Neuen Artikel hinzufügen ─── -->
+    <div class="admin-section">
+      <div class="admin-section-title">➕ Neuer Artikel</div>
+      <input type="text" id="admin-art-name" placeholder="Artikelname (z.B. Milch)" style="margin-bottom:8px;"/>
+      <input type="text" id="admin-art-unit" placeholder="Einheit (z.B. KG, Karton, Kiste)" style="margin-bottom:8px;"/>
+      <select id="admin-cat-select" style="margin-bottom:6px;">
+        <option value="">-- Kategorie wählen --</option>
+      </select>
+      <div id="admin-new-cat-wrap" style="display:none;margin-bottom:8px;">
+        <input type="text" id="admin-new-cat-input" placeholder="z.B. 🥗 Salate (Emoji + Name)"/>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Mit Emoji beginnen empfohlen</div>
+      </div>
+      <button class="btn btn-primary btn-block" id="admin-add-btn" style="margin-top:4px;">✅ Artikel hinzufügen</button>
+    </div>
+
+    <!-- ─── Edit-Formular (erscheint wenn Edit gedrückt) ─── -->
+    <div class="admin-section">
+      <div id="admin-edit-section" class="admin-edit-form">
+        <div id="admin-edit-title" style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--status-info);">✏️ Artikel bearbeiten</div>
+        <input type="text" id="admin-edit-name" placeholder="Name" style="margin-bottom:8px;"/>
+        <input type="text" id="admin-edit-unit" placeholder="Einheit" style="margin-bottom:10px;"/>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="admin-save-edit-btn" style="flex:1;">✅ Speichern</button>
+          <button class="btn btn-secondary" id="admin-cancel-edit-btn" style="flex:1;">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Artikel-Liste ─── -->
+    <div class="admin-section">
+      <div class="admin-section-title">📦 Alle Artikel</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">
+        ⠿ Ziehen zum Sortieren · ⏸️ Deaktivieren statt löschen
+      </div>
+      <div id="admin-art-list">
+        <div class="admin-skeleton"></div>
+        <div class="admin-skeleton"></div>
+        <div class="admin-skeleton"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
      SCRIPTS – Reihenfolge wichtig!
      1. config.js   – Konstanten
      2. app-core.js – Fundament (Auth, API, State, Toast)
@@ -695,6 +844,7 @@ textarea { min-height: 70px; resize: vertical; }
      ═════════════════════════════════════════════════════════════════ -->
 <script src="config.js"></script>
 <script src="app-core.js"></script>
+<script src="admin.js"></script>
 <script src="app.js"></script>
 
 </body>
