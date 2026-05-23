@@ -714,11 +714,11 @@
       return;
     }
 
-    // WhatsApp-Nachricht bauen
-    let msg = `🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n${C.APP.EMOJI} *${C.APP.NAME.toUpperCase()}*\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
+    // WhatsApp-Nachricht bauen – aus Config, nicht hardcoded!
+    let msg = `🍽️ *NEUE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n${C.APP.WHATSAPP_HEADER}\n👤 *${name}*\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\n*ARTIKEL:*\n`;
     items.forEach(i => msg += `▸ ${i.item}: *${i.qty} ${i.unit}*\n`);
     if(note) msg += `\n📝 ${note}\n`;
-    msg += `\n━━━━━━━━━━━━━━━━━━━━\nBitte bestätigen ✅`;
+    msg += `\n━━━━━━━━━━━━━━━━━━━━\nBitte bestätigen ✅\n🔗 ${C.DEPLOY_URL}${C.APP.EMPFAENGER_URL}`;
 
     // Reset
     closeCart();

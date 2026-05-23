@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<meta name="theme-color" content="#1e1b4b"/>
-<title>✈️ Airside → Lager</title>
+<meta name="theme-color" content="#1a3a6b"/>
+<title>✈️ Airside → Landside</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
 
 <style>
@@ -161,7 +161,7 @@ input, textarea, select { font-family: inherit; }
    HEADER
    ═════════════════════════════════════════════════════════════════ */
 .header {
-  background: linear-gradient(135deg, var(--brand-accent), #3730a3, #4f46e5);
+  background: var(--header-bg, linear-gradient(135deg,#0f2d52,#1a3a6b,#1e40af));
   padding: 28px 20px 20px;
   color: var(--text-inverse);
   text-align: center;
@@ -649,7 +649,7 @@ textarea { min-height: 70px; resize: vertical; }
   <div class="login-box">
     <div style="text-align:center;font-size:42px;margin-bottom:12px;">✈️</div>
     <div class="login-title">Bona'me × Lagardère</div>
-    <div class="login-sub">Airside → Lager Bestellsystem</div>
+    <div class="login-sub">Airside → Landside Bestellsystem</div>
     <input type="email" class="login-input" id="login-email" placeholder="Email" autocomplete="email"/>
     <input type="password" class="login-input" id="login-password" placeholder="Passwort" autocomplete="current-password"/>
     <button class="login-btn" id="login-submit-btn">🔐 Anmelden</button>
@@ -667,8 +667,8 @@ textarea { min-height: 70px; resize: vertical; }
 
   <!-- Header -->
   <header class="header">
-    <h1>✈️ Airside → Lager</h1>
-    <div class="sub">bona'me × Lagardère · Düsseldorf</div>
+    <h1 id="page-title">✈️ Airside → Landside</h1>
+    <div class="sub" id="page-sub">Airside → Landside · Düsseldorf</div>
   </header>
 
   <!-- Floating action buttons -->
@@ -843,7 +843,7 @@ textarea { min-height: 70px; resize: vertical; }
      3. app.js      – Diese App
      ═════════════════════════════════════════════════════════════════ -->
 <script src="config-base.js"></script>
-<script src="config-airside-lager.js"></script>
+<script src="config-airside.js"></script>
 <script src="app-core.js"></script>
 <script src="admin.js"></script>
 <script src="app.js"></script>
