@@ -492,26 +492,39 @@ textarea { min-height: 70px; resize: vertical; }
    FLOATING BUTTONS
    ═════════════════════════════════════════════════════════════════ */
 .fab {
-  position: fixed; top: 20px; right: 16px;
-  width: 44px; height: 44px;
+  position: fixed;
+  bottom: 90px;
+  right: 16px;
+  width: 48px; height: 48px;
   border-radius: 50%;
-  background: var(--text-primary);
-  color: var(--text-inverse);
+  background: var(--brand-primary);
+  color: white;
   border: none;
+  font-size: 22px;
+  box-shadow: var(--shadow-md);
+  z-index: 65;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+}
+.fab:active { opacity: 0.85; }
+.dark-btn {
+  position: fixed;
+  bottom: 90px;
+  left: 16px;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
   font-size: 20px;
   box-shadow: var(--shadow-md);
-  z-index: 70;
+  z-index: 65;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
 }
-.dark-btn {
-  position: fixed; top: 20px; left: 16px;
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  color: var(--text-inverse);
-  border: 1px solid rgba(255,255,255,0.3);
-  font-size: 16px;
-  z-index: 70;
-}
+.dark-btn:active { opacity: 0.85; }
 
 /* ═════════════════════════════════════════════════════════════════
    EMPTY STATES & LOADING
