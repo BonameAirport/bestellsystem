@@ -199,17 +199,52 @@
   }
 
   async function onLoginSuccess(){
-    hideLogin();
-    // ← DAS war der Bug: isAuthenticated wurde beim Reload nie gesetzt
+    // Token dekodieren und State setzen
     const token = Auth.getToken();
-    if(token){
-      const payload = Auth.decodeToken(token);
-      setState({
-        isAuthenticated: true,
-        user: payload ? { id: payload.sub, email: payload.email } : null,
-      });
+    if(!token){ showLogin(); return; }
+
+    const payload = Auth.decodeToken(token);
+    const userId = payload?.sub;
+
+    setState({
+      isAuthenticated: true,
+      user: payload ? { id: userId, email: payload.email } : null,
+    });
+
+    // ── Rollen-Check ──────────────────────────────────────────────
+    // Owner hat immer Zugang
+    if(userId !== C.OWNER_ID){
+      try {
+        const roles = await Api.get('user_roles', `?user_id=eq.${userId}&select=role`);
+        const role = roles?.[0]?.role;
+
+        // Keine Rolle = noch nicht freigeschaltet
+        if(!role){
+          Toast.error('Dein Konto wurde noch nicht freigeschaltet. Bitte warte auf die Freischaltung durch einen Admin.');
+          Auth.clearSession();
+          showLogin();
+          return;
+        }
+
+        // Rolle nicht erlaubt für diese Seite
+        if(!C.ALLOWED_ROLES.includes(role)){
+          Toast.error(`Keine Berechtigung für diese Seite. Deine Rolle: ${role}`);
+          Auth.clearSession();
+          showLogin();
+          return;
+        }
+      } catch(e) {
+        Toast.error('Zugriffsprüfung fehlgeschlagen. Bitte erneut versuchen.');
+        Auth.clearSession();
+        showLogin();
+        return;
+      }
     }
+
+    // Admin-Status prüfen
     await Auth.checkAdminStatus();
+
+    hideLogin();
     Toast.success('Willkommen!');
     await loadAppData();
   }
@@ -406,7 +441,19 @@
         delBtn.textContent = '🚫';
         delBtn.title = 'Sperren';
         delBtn.onclick = async () => {
-          if(!confirm(`${u.email} sperren?`)) return;
+          const _blockUser = await new Promise(resolve => {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:24px;';
+          const box = document.createElement('div');
+          box.style.cssText = 'background:var(--bg-card);border-radius:16px;padding:24px;max-width:300px;width:100%;';
+          box.innerHTML = `<div style="font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">${AppCore.escapeHTML(u.email)} sperren?</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Der Mitarbeiter verliert sofort seinen Zugang.</div><div style="display:flex;gap:8px;"><button id="_bu_c" class="btn btn-secondary" style="flex:1;">Abbrechen</button><button id="_bu_o" class="btn btn-danger" style="flex:1;">Sperren</button></div>`;
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          box.querySelector('#_bu_c').onclick = () => { overlay.remove(); resolve(false); };
+          box.querySelector('#_bu_o').onclick = () => { overlay.remove(); resolve(true); };
+          overlay.onclick = e => { if(e.target===overlay){overlay.remove();resolve(false);} };
+        });
+        if(!_blockUser) return;
           await Api.delete('user_roles', `?id=eq.${u.id}`);
           AppCore.Toast.success('Gesperrt');
           loadStaffInline();
@@ -483,7 +530,21 @@
 
   async function deleteContact(id, phone, event){
     event.stopPropagation();
-    if(!confirm('Kontakt löschen?')) return;
+    if(!window._confirmDialog) { window._confirmDialog = true; }
+    // Sauberer Dialog statt confirm()
+    const _shouldDelete = await new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:24px;';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:var(--bg-card);border-radius:16px;padding:24px;max-width:300px;width:100%;';
+      box.innerHTML = '<div style="font-size:15px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">Kontakt löschen?</div><div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Diese Aktion kann nicht rückgängig gemacht werden.</div><div style="display:flex;gap:8px;"><button id="_dc_cancel" class="btn btn-secondary" style="flex:1;">Abbrechen</button><button id="_dc_ok" class="btn btn-danger" style="flex:1;">Löschen</button></div>';
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      box.querySelector('#_dc_cancel').onclick = () => { overlay.remove(); resolve(false); };
+      box.querySelector('#_dc_ok').onclick    = () => { overlay.remove(); resolve(true); };
+      overlay.onclick = e => { if(e.target===overlay){overlay.remove();resolve(false);} };
+    });
+    if(!_shouldDelete) return;
 
     const success = await Api.delete('contacts', `?id=eq.${id}`);
     if(success){
