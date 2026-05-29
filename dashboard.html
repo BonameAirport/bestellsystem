@@ -2,830 +2,1056 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Owner Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="theme-color" content="#1e1b4b"/>
+<title>⚙️ Owner Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1f5f9;}
-/* LOGIN */
-#login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
-.login-box{background:#1e293b;border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid #334155;}
-.login-title{font-size:22px;font-weight:800;color:#f1f5f9;text-align:center;margin-bottom:4px;}
-.login-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:24px;}
-.login-input{width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:14px;font-size:15px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:10px;}
-.login-btn-main{width:100%;background:#7c3aed;color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+:root {
+  --bg:       #0f172a;
+  --card:     #1e293b;
+  --border:   #334155;
+  --text-1:   #f1f5f9;
+  --text-2:   #94a3b8;
+  --text-3:   #64748b;
+  --brand:    #7c3aed;
+  --brand-l:  #a78bfa;
+  --ok:       #16a34a;
+  --warn:     #f59e0b;
+  --err:      #dc2626;
+  --info:     #2563eb;
+  --r:        12px;
+  --t:        0.15s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',system-ui,sans-serif;background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-tap-highlight-color:transparent;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* ── Animations ── */
+@keyframes fadeIn  {from{opacity:0}to{opacity:1}}
+@keyframes slideUp {from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse   {0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes spin    {to{transform:rotate(360deg)}}
+@keyframes toastIn  {from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut {to{opacity:0;transform:translateY(16px)}}
+
+/* ── Login ── */
+.login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e293b);z-index:999;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-box{background:var(--card);border-radius:20px;padding:32px 24px;width:100%;max-width:360px;border:1px solid var(--border);animation:slideUp .3s ease;}
+.login-icon{font-size:40px;text-align:center;margin-bottom:12px;}
+.login-title{font-size:22px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--text-3);text-align:center;margin-bottom:24px;}
+.login-inp{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:14px;font-size:16px;color:var(--text-1);outline:none;margin-bottom:10px;transition:border-color var(--t);}
+.login-inp:focus{border-color:var(--brand);}
+.login-btn{width:100%;background:var(--brand);color:white;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;transition:opacity var(--t);}
+.login-btn:disabled{opacity:.5;}
 .login-err{display:none;color:#f87171;font-size:13px;text-align:center;margin-top:8px;}
-/* HEADER */
-.header{background:linear-gradient(135deg,#1e1b4b,#3730a3,#7c3aed);padding:16px 20px;}
-.header-top{display:flex;align-items:center;justify-content:space-between;}
-.header h1{font-size:18px;font-weight:800;color:white;}
-.header .sub{font-size:12px;color:rgba(255,255,255,0.7);margin-top:3px;}
-.logout-btn{background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);border-radius:8px;padding:6px 12px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-/* TABS */
-.tabs{display:flex;background:#1e293b;border-bottom:2px solid #334155;overflow-x:auto;}
-.tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;}
-.tab.on{color:#7c3aed;border-bottom-color:#7c3aed;}
-/* STATS CARDS */
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;} .stats-grid .stat-card:last-child{grid-column:span 2;}
-.stat-card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155;}
-.stat-num{font-size:28px;font-weight:800;}
-.stat-label{font-size:12px;color:#64748b;margin-top:4px;}
-.stat-green{color:#16a34a;}
-.stat-blue{color:#2563eb;}
-.stat-purple{color:#7c3aed;}
-.stat-orange{color:#f59e0b;}
-/* ORDERS */
-.wrap{max-width:500px;margin:0 auto;padding:10px 14px 80px;}
-.card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
-.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
-.card-name{font-size:14px;font-weight:800;color:#f1f5f9;}
-.card-date{font-size:11px;color:#64748b;}
-.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;}
-.b-offen{background:#fef3c7;color:#b45309;}
-.b-ok{background:#d1fae5;color:#065f46;}
-.b-err{background:#fee2e2;color:#dc2626;}
-.type-tag{font-size:11px;font-weight:700;margin-top:4px;}
-.t-lager{color:#16a34a;}
-.t-airside{color:#2563eb;}
-.t-al{color:#7c3aed;}
-/* FILTER */
-.filter-bar{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;background:#1e293b;border-bottom:1px solid #334155;}
-.filter-btn{padding:6px 14px;border:1.5px solid #334155;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:#64748b;white-space:nowrap;}
-.filter-btn.on{background:#7c3aed;color:white;border-color:#7c3aed;}
-/* ARTICLES */
-.art-section{background:#1e293b;border-radius:12px;margin-bottom:10px;overflow:hidden;border:1px solid #334155;}
-.art-section-head{padding:10px 14px;font-size:12px;font-weight:800;color:white;background:linear-gradient(135deg,#1e1b4b,#3730a3);}
-.art-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #334155;}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1e1b4b,#3730a3,#7c3aed);padding:16px 16px 12px;position:sticky;top:0;z-index:50;}
+.header-row{display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:17px;font-weight:800;color:white;}
+.header .sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;}
+.logout-btn{background:rgba(220,38,38,.2);border:1px solid rgba(220,38,38,.4);border-radius:8px;padding:6px 12px;color:#f87171;font-size:12px;font-weight:700;}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:var(--card);border-bottom:2px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:62px;z-index:40;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:11px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;transition:color var(--t),border-color var(--t);}
+.tab.on{color:var(--brand-l);border-bottom-color:var(--brand-l);}
+
+/* ── Wrap ── */
+.wrap{max-width:520px;margin:0 auto;padding:14px 14px 80px;}
+
+/* ── Cards ── */
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;border:1px solid var(--border);animation:fadeIn .2s ease;}
+
+/* ── Stats Grid ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-card{background:var(--card);border-radius:var(--r);padding:16px;border:1px solid var(--border);text-align:center;}
+.stat-num{font-size:30px;font-weight:800;line-height:1;}
+.stat-label{font-size:11px;color:var(--text-3);margin-top:6px;}
+.c-ok{color:var(--ok);}
+.c-warn{color:var(--warn);}
+.c-info{color:var(--info);}
+.c-brand{color:var(--brand-l);}
+.c-err{color:var(--err);}
+
+/* ── Status Cards ── */
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.status-card{background:var(--card);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.s-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;transition:all .3s;}
+.s-dot.green{background:var(--ok);box-shadow:0 0 8px var(--ok);}
+.s-dot.red{background:var(--err);box-shadow:0 0 8px var(--err);}
+.s-dot.checking{background:var(--warn);animation:pulse 1s infinite;}
+.s-label{font-size:12px;font-weight:700;color:var(--text-1);}
+.s-sub{font-size:10px;color:var(--text-3);margin-top:1px;}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;}
+.b-offen{background:rgba(245,158,11,.15);color:#fcd34d;}
+.b-ok{background:rgba(22,163,74,.15);color:#4ade80;}
+.b-err{background:rgba(220,38,38,.15);color:#f87171;}
+.b-info{background:rgba(37,99,235,.15);color:#93c5fd;}
+.b-done{background:rgba(124,58,237,.15);color:var(--brand-l);}
+
+/* ── Filter Bar ── */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:109px;z-index:30;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.f-btn{padding:5px 12px;border:1.5px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;background:transparent;color:var(--text-3);white-space:nowrap;flex-shrink:0;transition:all var(--t);}
+.f-btn.on{background:var(--brand);color:white;border-color:var(--brand);}
+
+/* ── Order Cards ── */
+.o-card{background:var(--card);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border);}
+.o-name{font-size:14px;font-weight:800;color:var(--text-1);}
+.o-date{font-size:11px;color:var(--text-3);margin-top:2px;}
+.o-type{font-size:11px;font-weight:700;margin-top:3px;}
+.t-lager{color:var(--ok);}
+.t-airside{color:var(--info);}
+.t-al{color:var(--brand-l);}
+.o-preview{font-size:12px;color:var(--text-3);margin-top:5px;line-height:1.4;}
+
+/* Status-Änderung Select */
+.status-select{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text-1);font-family:inherit;cursor:pointer;outline:none;margin-top:8px;width:100%;}
+
+/* ── Artikel ── */
+.art-section{background:var(--card);border-radius:var(--r);margin-bottom:10px;overflow:hidden;border:1px solid var(--border);}
+.art-head{padding:10px 14px;font-size:12px;font-weight:800;color:white;background:linear-gradient(135deg,#1e1b4b,#3730a3);}
+.art-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);}
 .art-row:last-child{border-bottom:none;}
-.art-img{width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0;}
-.art-ph{width:40px;height:40px;border-radius:8px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.art-name{flex:1;font-size:13px;font-weight:700;color:#f1f5f9;}
-.art-unit{font-size:11px;color:#64748b;}
-.art-type{font-size:10px;color:#7c3aed;font-weight:700;}
-/* LIVE DOT */
-.live-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;display:inline-block;margin-right:6px;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-.empty{text-align:center;padding:40px 20px;color:#64748b;}
+.art-img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;}
+.art-ph{width:38px;height:38px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.art-name{flex:1;font-size:13px;font-weight:700;color:var(--text-1);}
+.art-unit{font-size:11px;color:var(--text-3);}
 
-.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}
-.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}
-.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
-.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}
-.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}
-.status-dot.checking{background:#f59e0b;animation:pulse 1s infinite;}
-.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}
-.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:700;font-family:inherit;transition:opacity var(--t);}
+.btn:hover{opacity:.9;}
+.btn-primary{background:var(--brand);color:white;}
+.btn-ok{background:rgba(22,163,74,.2);color:#4ade80;}
+.btn-err{background:rgba(220,38,38,.2);color:#f87171;}
+.btn-info{background:rgba(37,99,235,.2);color:#93c5fd;}
+.btn-warn{background:rgba(245,158,11,.2);color:#fcd34d;}
+.btn-block{width:100%;padding:12px;}
 
-.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 14px 0;}.status-card{background:#1e293b;border-radius:12px;padding:14px;border:1px solid #334155;display:flex;align-items:center;gap:12px;}.status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}.status-dot.green{background:#16a34a;box-shadow:0 0 8px #16a34a;}.status-dot.red{background:#dc2626;box-shadow:0 0 8px #dc2626;}.status-dot.checking{background:#f59e0b;animation:blink 1s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}.status-label{font-size:13px;font-weight:700;color:#f1f5f9;}.status-sub{font-size:11px;color:#64748b;margin-top:2px;}
-.delivery-stats{background:#1e293b;border-radius:14px;margin:0 14px 14px;padding:16px;border:1px solid #334155;}
-.delivery-stats-title{font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;}
-.delivery-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;}
-.delivery-row:last-child{border-bottom:none;}
-.delivery-label{font-size:13px;color:#94a3b8;}
-.delivery-val{font-size:14px;font-weight:800;color:#f1f5f9;}
-.delivery-val.good{color:#16a34a;}
-.delivery-val.warn{color:#f59e0b;}
-.delivery-val.bad{color:#dc2626;}
+/* ── Input ── */
+.inp{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--text-1);outline:none;transition:border-color var(--t);margin-bottom:8px;}
+.inp:focus{border-color:var(--brand);}
+select.inp{cursor:pointer;}
+
+/* ── User Rows ── */
+.user-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.user-row:last-child{border-bottom:none;}
+.user-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;}
+.u-pending{background:var(--warn);color:white;}
+.u-active{background:var(--ok);color:white;}
+.user-info{flex:1;min-width:0;}
+.user-name{font-size:13px;font-weight:700;color:var(--text-1);}
+.user-email{font-size:11px;color:var(--text-3);margin-top:1px;}
+.role-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:3px;}
+
+/* ── System Test ── */
+.test-item{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:8px;border:1px solid var(--border);}
+.test-title{font-size:13px;font-weight:800;color:var(--text-1);margin-bottom:4px;}
+.test-desc{font-size:11px;color:var(--text-3);margin-bottom:10px;}
+.test-result{font-size:12px;padding:8px 10px;border-radius:8px;margin-top:8px;display:none;}
+.test-result.ok{background:rgba(22,163,74,.15);color:#4ade80;display:block;}
+.test-result.err{background:rgba(220,38,38,.15);color:#f87171;display:block;}
+.test-result.warn{background:rgba(245,158,11,.15);color:#fcd34d;display:block;}
+.test-result.info{background:rgba(37,99,235,.15);color:#93c5fd;display:block;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--brand-l);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
+
+/* ── Section Title ── */
+.sec-title{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+
+/* ── Toast ── */
+#toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:90vw;}
+
+/* ── Alert Banner ── */
+#alert-banner{display:none;position:fixed;top:0;left:0;right:0;padding:10px 16px;font-size:12px;font-weight:700;text-align:center;z-index:999;}
+
+/* ── Delivery-Time Bar ── */
+.dt-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px;}
+.dt-fill{height:100%;border-radius:3px;}
+
+/* ── Live dot ── */
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:5px;animation:pulse 2s infinite;}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:13px;}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
+<!-- Alert Banner -->
+<div id="alert-banner"></div>
+
+<!-- Toast -->
+<div id="toast-wrap"></div>
+
+<!-- ══ LOGIN ══════════════════════════════════════════════════ -->
+<div class="login-overlay" id="login-screen">
   <div class="login-box">
-    <div class="login-title">👑 Owner</div>
-    <div class="login-sub">bona'me Dashboard</div>
-    <input type="email" id="login-email" class="login-input" placeholder="Email" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <input type="password" id="login-pw" class="login-input" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="login-btn-main" onclick="doLogin()">🔐 Anmelden</button>
+    <div class="login-icon">⚙️</div>
+    <div class="login-title">Owner Dashboard</div>
+    <div class="login-sub">bona'me × Lagardère</div>
+    <input type="email" id="login-email" class="login-inp" placeholder="Email" autocomplete="email"/>
+    <input type="password" id="login-pw" class="login-inp" placeholder="Passwort" autocomplete="current-password"/>
+    <button class="login-btn" id="login-btn">🔐 Anmelden</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-top">
-    <div>
-      <h1>👑 Owner Dashboard</h1>
-      <div class="sub"><span class="live-dot"></span>Live · bona'me × Lagardère</div>
-    </div>
-    <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
-  </div>
-</div>
+<!-- ══ MAIN ═══════════════════════════════════════════════════ -->
+<div id="app" style="display:none;">
 
-<!-- TABS -->
-<div class="tabs">
-  <div class="tab on" id="tab-overview" onclick="showTab('overview')">📊 Übersicht</div>
-  <div class="tab" id="tab-orders" onclick="showTab('orders')">📋 Bestellungen</div>
-  <div class="tab" id="tab-articles" onclick="showTab('articles')">📦 Artikel</div>
-  <div class="tab" id="tab-users" onclick="showTab('users')">👥 Benutzer</div>
-</div>
-
-<!-- OVERVIEW -->
-<div id="page-overview">
-  
-  <div class="status-grid">
-    <div class="status-card"><div class="status-dot checking" id="status-dot-db"></div><div><div class="status-label">Supabase DB</div><div class="status-sub" id="status-text-db">Prüfe...</div></div></div>
-    <div class="status-card"><div class="status-dot checking" id="status-dot-netlify"></div><div><div class="status-label">Netlify</div><div class="status-sub" id="status-text-netlify">Prüfe...</div></div></div>
-    <div class="status-card"><div class="status-dot checking" id="status-dot-orders"></div><div><div class="status-label">Bestellungen</div><div class="status-sub" id="status-text-orders">Prüfe...</div></div></div>
-    <div class="status-card"><div class="status-dot checking" id="status-dot-articles"></div><div><div class="status-label">Artikel</div><div class="status-sub" id="status-text-articles">Prüfe...</div></div></div>
-  </div>
-
-<div class="stats-grid" id="stats-grid">
-    <div class="stat-card"><div class="stat-num stat-orange" id="stat-open">-</div><div class="stat-label">Offene Bestellungen</div></div>
-    <div class="stat-card"><div class="stat-num stat-green" id="stat-done">-</div><div class="stat-label">Heute erledigt</div></div>
-    <div class="stat-card"><div class="stat-num stat-blue" id="stat-today">-</div><div class="stat-label">Heute gesamt</div></div>
-    <div class="stat-card"><div class="stat-num stat-purple" id="stat-articles">-</div><div class="stat-label">Artikel gesamt</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:#0ea5e9;" id="stat-users">-</div><div class="stat-label">Mitarbeiter</div></div>
-  </div>
-  <div id="delivery-stats" style="display:none;background:#1e293b;border-radius:14px;margin:0 14px 14px;padding:16px;border:1px solid #334155;">
-    <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">⏱️ Lieferzeiten heute</div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
-      <span style="font-size:13px;color:#94a3b8;">Ø Durchschnitt</span>
-      <span style="font-size:14px;font-weight:800;" id="del-avg">-</span>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
-      <span style="font-size:13px;color:#94a3b8;">⚡ Schnellste</span>
-      <span style="font-size:14px;font-weight:800;color:#16a34a;" id="del-min">-</span>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;">
-      <span style="font-size:13px;color:#94a3b8;">🐢 Langsamste</span>
-      <span style="font-size:14px;font-weight:800;color:#dc2626;" id="del-max">-</span>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;">
-      <span style="font-size:13px;color:#94a3b8;">✅ Erledigt heute</span>
-      <span style="font-size:14px;font-weight:800;color:#7c3aed;" id="del-count">-</span>
-    </div>
-  </div>
-  
-</div>
-
-<!-- ORDERS -->
-<div id="page-orders" style="display:none;">
-  <div class="filter-bar">
-    <button class="filter-btn on" id="fo-all" onclick="setOrderFilter('all')">Alle</button>
-    <button class="filter-btn" id="fo-lager" onclick="setOrderFilter('lager')">📦 Landside→Lager</button>
-    <button class="filter-btn" id="fo-airside" onclick="setOrderFilter('airside')">✈️ Landside→Airside</button>
-    <button class="filter-btn" id="fo-al" onclick="setOrderFilter('airside_lager')">🔄 Airside→Lager</button>
-    <button class="filter-btn" id="fo-done" onclick="setOrderFilter('done')">✅ Erledigt</button>
-  </div>
-  <div class="wrap" id="orders-list"></div>
-</div>
-
-<!-- ARTICLES -->
-<div id="page-articles" style="display:none;">
-  <div class="filter-bar">
-    <button class="filter-btn on" id="fa-all" onclick="setArticleFilter('all')">Alle</button>
-    <button class="filter-btn" id="fa-lager" onclick="setArticleFilter('lager')">📦 Lager</button>
-    <button class="filter-btn" id="fa-airside" onclick="setArticleFilter('airside')">✈️ Airside</button>
-    <button class="filter-btn" id="fa-al" onclick="setArticleFilter('airside_lager')">🔄 Airside→Lager</button>
-  </div>
-  <div style="padding:10px 14px;background:#1e293b;border-bottom:1px solid #334155;">
-    <input type="text" id="art-search" placeholder="🔍 Artikel oder Kategorie suchen..." 
-      oninput="searchArticlesDash(this.value)"
-      style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:10px;padding:10px 14px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;"/>
-  </div>
-  <div class="wrap">
-    <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #334155;">
-      <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:10px;">➕ Neuen Artikel hinzufügen</div>
-      <input type="text" id="new-art-name" placeholder="Artikelname" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
-      <input type="text" id="new-art-unit" placeholder="Einheit (z.B. 1 KG, 6x2KG)" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
-      <select id="new-art-type" onchange="populateSectionSelect()" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
-        <option value="">-- Seite wählen --</option>
-        <option value="lager">📦 Landside → Lager</option>
-        <option value="airside">✈️ Landside → Airside</option>
-        <option value="airside_lager">🔄 Airside → Lager</option>
-      </select>
-      <select id="new-art-section" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
-        <option value="">-- Kategorie wählen --</option>
-      </select>
-      <div id="new-cat-wrap-dash" style="display:none;margin-bottom:8px;">
-        <input type="text" id="new-cat-input-dash" placeholder="z.B. 🥗 Salate" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;"/>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-row">
+      <div>
+        <h1>⚙️ Owner Dashboard</h1>
+        <div class="sub"><span class="live-dot"></span>bona'me × Lagardère · Düsseldorf</div>
       </div>
-      <button onclick="addArticleDash()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Artikel hinzufügen</button>
+      <button class="logout-btn" id="logout-btn">Abmelden</button>
     </div>
-    <div id="articles-list"></div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab on" data-tab="overview">📊 Übersicht</button>
+    <button class="tab"    data-tab="orders">📋 Bestellungen</button>
+    <button class="tab"    data-tab="articles">📦 Artikel</button>
+    <button class="tab"    data-tab="users">👥 Benutzer</button>
+    <button class="tab"    data-tab="system">🔧 System</button>
+  </nav>
+
+  <!-- ── Page: Übersicht ───────────────────────────────────── -->
+  <div id="page-overview" class="wrap">
+
+    <!-- Status -->
+    <div class="sec-title">System Status</div>
+    <div class="status-grid">
+      <div class="status-card"><div class="s-dot checking" id="sd-db"></div><div><div class="s-label">Supabase DB</div><div class="s-sub" id="st-db">Prüfe...</div></div></div>
+      <div class="status-card"><div class="s-dot checking" id="sd-netlify"></div><div><div class="s-label">Netlify</div><div class="s-sub" id="st-netlify">Prüfe...</div></div></div>
+      <div class="status-card"><div class="s-dot checking" id="sd-orders"></div><div><div class="s-label">Bestellungen</div><div class="s-sub" id="st-orders">Prüfe...</div></div></div>
+      <div class="status-card"><div class="s-dot checking" id="sd-articles"></div><div><div class="s-label">Artikel</div><div class="s-sub" id="st-articles">Prüfe...</div></div></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="sec-title" style="margin-top:16px;">Heute</div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num c-warn" id="stat-open">–</div><div class="stat-label">Offen</div></div>
+      <div class="stat-card"><div class="stat-num c-ok" id="stat-done">–</div><div class="stat-label">Erledigt heute</div></div>
+      <div class="stat-card"><div class="stat-num c-info" id="stat-today">–</div><div class="stat-label">Bestellungen heute</div></div>
+      <div class="stat-card"><div class="stat-num c-brand" id="stat-users">–</div><div class="stat-label">Aktive User</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num c-ok" id="stat-articles">–</div><div class="stat-label">Artikel total</div></div>
+      <div class="stat-card"><div class="stat-num c-warn" id="stat-pending">–</div><div class="stat-label">Ausstehend</div></div>
+    </div>
+
+    <!-- Ø Lieferzeit -->
+    <div id="delivery-stats" style="display:none;">
+      <div class="sec-title" style="margin-top:16px;">Ø Lieferzeit (heute)</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:13px;color:var(--text-2);">Durchschnitt</span>
+          <span style="font-size:22px;font-weight:800;color:var(--ok);" id="dt-avg">–</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);">
+          <span>Min: <strong id="dt-min">–</strong></span>
+          <span>Max: <strong id="dt-max">–</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letzte offene Bestellungen -->
+    <div class="sec-title" style="margin-top:16px;">Offene Bestellungen</div>
+    <div id="overview-orders"></div>
+
   </div>
+
+  <!-- ── Page: Bestellungen ────────────────────────────────── -->
+  <div id="page-orders" style="display:none;">
+    <div class="filter-bar">
+      <button class="f-btn on" data-of="all">Alle offen</button>
+      <button class="f-btn"    data-of="lager">📦 Landside</button>
+      <button class="f-btn"    data-of="airside">✈️ Airside</button>
+      <button class="f-btn"    data-of="airside_lager">🔄 A→Lager</button>
+      <button class="f-btn"    data-of="done">✅ Erledigt</button>
+    </div>
+    <div class="wrap" id="orders-list"></div>
+  </div>
+
+  <!-- ── Page: Artikel ─────────────────────────────────────── -->
+  <div id="page-articles" style="display:none;">
+    <div class="filter-bar">
+      <button class="f-btn on" data-af="all">Alle</button>
+      <button class="f-btn"    data-af="lager">📦 Landside</button>
+      <button class="f-btn"    data-af="airside">✈️ Airside</button>
+      <button class="f-btn"    data-af="airside_lager">🔄 A→Lager</button>
+    </div>
+    <div class="wrap">
+      <!-- Neuer Artikel -->
+      <div class="card">
+        <div class="sec-title">➕ Neuer Artikel</div>
+        <input type="text" id="new-art-name" class="inp" placeholder="Artikelname *"/>
+        <input type="text" id="new-art-unit" class="inp" placeholder="Einheit (z.B. KG, Karton)"/>
+        <select id="new-art-type" class="inp" onchange="populateSectionSelect()">
+          <option value="">-- Bestelltyp wählen --</option>
+          <option value="lager">📦 Landside → Lager</option>
+          <option value="airside">✈️ Airside → Landside</option>
+          <option value="airside_lager">🔄 Airside → Lager</option>
+        </select>
+        <select id="new-art-section" class="inp">
+          <option value="">-- Zuerst Typ wählen --</option>
+        </select>
+        <div id="new-cat-wrap" style="display:none;">
+          <input type="text" id="new-cat-inp" class="inp" placeholder="z.B. 🥗 Salate (Emoji + Name)"/>
+        </div>
+        <button class="btn btn-primary btn-block" id="add-art-btn">✅ Artikel hinzufügen</button>
+      </div>
+
+      <!-- Suche -->
+      <input type="text" id="art-search" class="inp" placeholder="🔍 Artikel suchen..." oninput="searchArticles(this.value)"/>
+      <div id="articles-list"></div>
+    </div>
+  </div>
+
+  <!-- ── Page: Benutzer ────────────────────────────────────── -->
+  <div id="page-users" style="display:none;">
+    <div class="wrap">
+      <div class="card">
+        <div class="sec-title" id="pending-title">⏳ Ausstehend (0)</div>
+        <div id="users-pending"></div>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <div class="sec-title" id="active-title">👥 Aktive Mitarbeiter (0)</div>
+        <div id="users-active"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Page: System Test ─────────────────────────────────── -->
+  <div id="page-system" style="display:none;">
+    <div class="wrap">
+
+      <div class="card" style="margin-bottom:10px;">
+        <div class="sec-title">🔧 System-Tests</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:12px;">Prüft alle kritischen Funktionen des Systems auf Fehler.</div>
+        <button class="btn btn-primary btn-block" id="run-tests-btn">▶️ Alle Tests starten</button>
+      </div>
+
+      <!-- Test 1: Supabase Verbindung -->
+      <div class="test-item" id="test-supabase">
+        <div class="test-title">1. Supabase Verbindung</div>
+        <div class="test-desc">Prüft ob die Datenbank erreichbar ist und Daten gelesen werden können.</div>
+        <div class="test-result" id="tr-supabase"></div>
+      </div>
+
+      <!-- Test 2: Auth System -->
+      <div class="test-item" id="test-auth">
+        <div class="test-title">2. Auth & Rollen-System</div>
+        <div class="test-desc">Prüft ob user_roles und admin_users Tabellen korrekt funktionieren.</div>
+        <div class="test-result" id="tr-auth"></div>
+      </div>
+
+      <!-- Test 3: Artikel -->
+      <div class="test-item" id="test-articles">
+        <div class="test-title">3. Artikel-Tabelle</div>
+        <div class="test-desc">Prüft ob alle 3 Bestelltypen Artikel haben.</div>
+        <div class="test-result" id="tr-articles"></div>
+      </div>
+
+      <!-- Test 4: Empfänger-Seite -->
+      <div class="test-item" id="test-emp">
+        <div class="test-title">4. Empfänger-Seite (empfaenger.html)</div>
+        <div class="test-desc">Prüft ob die Seite erreichbar ist und die nötigen Funktionen hat.</div>
+        <div class="test-result" id="tr-emp"></div>
+      </div>
+
+      <!-- Test 5: Delivery Feld -->
+      <div class="test-item" id="test-delivery">
+        <div class="test-title">5. Delivery-Check Feld</div>
+        <div class="test-desc">Prüft ob die orders Tabelle das delivery-Feld hat.</div>
+        <div class="test-result" id="tr-delivery"></div>
+      </div>
+
+      <!-- Test 6: RLS -->
+      <div class="test-item" id="test-rls">
+        <div class="test-title">6. Row Level Security (RLS)</div>
+        <div class="test-desc">Prüft ob RLS auf kritischen Tabellen aktiv ist.</div>
+        <div class="test-result" id="tr-rls"></div>
+      </div>
+
+      <!-- Test 7: Offene Bestellungen > 30 Min -->
+      <div class="test-item" id="test-stale">
+        <div class="test-title">7. Veraltete Bestellungen</div>
+        <div class="test-desc">Prüft ob es offene Bestellungen gibt die länger als 30 Minuten offen sind.</div>
+        <div class="test-result" id="tr-stale"></div>
+      </div>
+
+      <!-- Test 8: Service Worker -->
+      <div class="test-item" id="test-sw">
+        <div class="test-title">8. Service Worker & Cache</div>
+        <div class="test-desc">Prüft ob der Service Worker aktiv ist und die App Offline-fähig ist.</div>
+        <div class="test-result" id="tr-sw"></div>
+      </div>
+
+    </div>
+  </div>
+
 </div>
 
 <script>
-const SB_URL="https://xltsjtbbbykftmjkhcjm.supabase.co";
-const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
-const H={"apikey":SB_KEY,"Content-Type":"application/json"};
+(function(){
+'use strict';
 
-let allOrders=[], allArticles=[], orderFilter='all', articleFilter='all';
+const SB   = "https://xltsjtbbbykftmjkhcjm.supabase.co";
+const KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss";
+const OWNER_ID = "dbeecae7-3b37-4c66-91fd-820fe6e55ac1";
+const OWNER_PHONE = "491743822643";
 
-async function api(method,table,query="",body=null){
+let _token=null, _allOrders=[], _allArticles=[], _orderFilter='all', _articleFilter='all';
+const $ = id => document.getElementById(id);
+
+// ── esc ───────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg,type='info',dur=3500){
+  const c={success:'#16a34a',error:'#dc2626',warning:'#f59e0b',info:'#1e293b'};
+  const i={success:'✅',error:'❌',warning:'⚠️',info:'ℹ️'};
+  const el=document.createElement('div');
+  el.style.cssText=`background:${c[type]};color:white;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:auto;cursor:pointer;animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;`;
+  el.innerHTML=`<span>${i[type]||'ℹ️'}</span><span>${esc(msg)}</span>`;
+  el.onclick=()=>el.remove();
+  $('toast-wrap').appendChild(el);
+  setTimeout(()=>{el.style.animation='toastOut .3s ease forwards';setTimeout(()=>el.remove(),300);},dur);
+}
+
+// ── API ───────────────────────────────────────────────────────
+function hdrs(extra={}){ return {'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(_token||KEY),...extra}; }
+
+async function api(method,table,query='',body=null){
   try{
-    const token=localStorage.getItem('dash_token');
-    const headers={...H};
-    if(token) headers['Authorization']='Bearer '+token;
-    const o={method,headers};
+    const o={method,headers:hdrs()};
     if(body) o.body=JSON.stringify(body);
-    const r=await fetch(`${SB_URL}/rest/v1/${table}${query}`,o);
+    if(method==='PATCH'||method==='POST') o.headers['Prefer']='return=representation';
+    const r=await fetch(`${SB}/rest/v1/${table}${query}`,o);
     if(!r.ok) return null;
-    if(method==="DELETE") return true;
+    if(method==='DELETE'||method==='PATCH') return true;
     return await r.json();
   }catch(e){return null;}
 }
 
-// ─── LOGIN ───────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────
 async function doLogin(){
-  const email=document.getElementById('login-email').value.trim();
-  const pw=document.getElementById('login-pw').value;
-  const err=document.getElementById('login-err');
-  if(!email||!pw){err.style.display='block';err.textContent='❌ Bitte Email und Passwort eingeben.';return;}
+  const email=$('login-email').value.trim();
+  const pw=$('login-pw').value;
+  const err=$('login-err');
+  err.style.display='none';
+  if(!email||!pw){err.style.display='block';err.textContent='Bitte Email und Passwort eingeben.';return;}
+  const btn=$('login-btn'); btn.disabled=true; btn.textContent='⏳ Anmeldung...';
   try{
-    const r=await fetch(`${SB_URL}/auth/v1/token?grant_type=password`,{
-      method:'POST',
-      headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+    const r=await fetch(`${SB}/auth/v1/token?grant_type=password`,{
+      method:'POST',headers:{'apikey':KEY,'Content-Type':'application/json'},
       body:JSON.stringify({email,password:pw})
     });
     const data=await r.json();
     if(data.access_token){
-      // Check if user is owner
       const payload=JSON.parse(atob(data.access_token.split('.')[1]));
-      const userId=payload.sub;
-      if(userId!==OWNER_ID){
-        alert('❌ Kein Zugriff auf das Owner Dashboard.');
-        return;
+      if(payload.sub!==OWNER_ID){
+        err.style.display='block';err.textContent='Kein Zugriff – nur für Owner.';
+        btn.disabled=false;btn.textContent='🔐 Anmelden';return;
       }
+      _token=data.access_token;
       localStorage.setItem('dash_token',data.access_token);
-      localStorage.setItem('dash_session',(Date.now()+30*24*3600000).toString());
-      document.getElementById('login-screen').style.display='none';
+      localStorage.setItem('dash_exp',(Date.now()+(data.expires_in||3600)*1000).toString());
+      $('login-screen').style.display='none';
+      $('app').style.display='block';
+      toast('Willkommen zurück!','success');
       loadAll();
     }else{
-      err.style.display='block';err.textContent='❌ Falsche Email oder Passwort';
+      err.style.display='block';err.textContent='Falsche Email oder Passwort.';
     }
-  }catch(e){err.style.display='block';err.textContent='❌ Verbindungsfehler';}
+  }catch(e){err.style.display='block';err.textContent='Verbindungsfehler.';}
+  btn.disabled=false;btn.textContent='🔐 Anmelden';
 }
 
 function doLogout(){
+  _token=null;
   localStorage.removeItem('dash_token');
-  localStorage.removeItem('dash_session');
+  localStorage.removeItem('dash_exp');
   location.reload();
 }
 
-// ─── TABS ─────────────────────────────────────────────────
+// ── TABS ─────────────────────────────────────────────────────
+const TABS=['overview','orders','articles','users','system'];
 function showTab(tab){
-  ['overview','orders','articles','users'].forEach(t=>{
-    document.getElementById('page-'+t).style.display=t===tab?'block':'none';
-    document.getElementById('tab-'+t).classList.toggle('on',t===tab);
+  TABS.forEach(t=>{
+    const p=$('page-'+t);
+    if(p) p.style.display=t===tab?'block':'none';
   });
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   if(tab==='orders') renderOrders();
   if(tab==='articles') renderArticles();
   if(tab==='users') loadUsers();
+  if(tab==='system') initSystemTests();
 }
 
-// ─── LOAD ALL ─────────────────────────────────────────────
+// ── LOAD ALL ─────────────────────────────────────────────────
 async function loadAll(){
   const [orders,articles]=await Promise.all([
-    api("GET","orders","?order=created_at.desc"),
-    api("GET","articles","?order=type.asc,section.asc,name.asc")
+    api('GET','orders','?order=created_at.desc'),
+    api('GET','articles','?order=type.asc,section.asc,name.asc')
   ]);
-  allOrders=orders||[];
-  allArticles=articles||[];
+  _allOrders=orders||[];
+  _allArticles=articles||[];
   renderOverview();
+  checkStatus();
+  checkOpenOrders();
 }
 
-// ─── OVERVIEW ────────────────────────────────────────────
+// ── OVERVIEW ─────────────────────────────────────────────────
 async function renderOverview(){
   const now=new Date();
-  const todayStr=now.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}).split('.').slice(0,2).join('.');
-  const open=allOrders.filter(o=>!['angekommen','fehler'].includes(o.status));
-  const done=allOrders.filter(o=>['angekommen','fehler'].includes(o.status)&&o.date&&o.date.includes(todayStr));
-  const todayAll=allOrders.filter(o=>o.date&&o.date.includes(todayStr));
-  
-  document.getElementById('stat-open').textContent=open.length;
-  document.getElementById('stat-done').textContent=done.length;
-  document.getElementById('stat-today').textContent=todayAll.length;
-  document.getElementById('stat-articles').textContent=allArticles.length;
-  
-  // Load user count
-  const roles=await api("GET","user_roles","?select=id");
-  const userCount=(roles||[]).length;
-  document.getElementById('stat-users').textContent=userCount;
-  
-  // Calculate delivery times
+  const todayStr=now.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}).split('.').slice(0,2).join('.');
+  const open=_allOrders.filter(o=>!['angekommen','fehler'].includes(o.status));
+  const done=_allOrders.filter(o=>['angekommen','fehler'].includes(o.status)&&o.date&&o.date.includes(todayStr));
+  const todayAll=_allOrders.filter(o=>o.date&&o.date.includes(todayStr));
+
+  $('stat-open').textContent=open.length;
+  $('stat-done').textContent=done.length;
+  $('stat-today').textContent=todayAll.length;
+  $('stat-articles').textContent=_allArticles.length;
+
+  const [roles,pending]=await Promise.all([
+    api('GET','user_roles','?select=id'),
+    api('GET','pending_users','?select=id')
+  ]);
+  $('stat-users').textContent=(roles||[]).length;
+  $('stat-pending').textContent=(pending||[]).length;
+
   calcDeliveryTimes(done);
-  
-}
 
-// ─── ORDERS ──────────────────────────────────────────────
-function setOrderFilter(f){
-  orderFilter=f;
-  ['all','lager','airside','al','done'].forEach(k=>{
-    document.getElementById('fo-'+k)?.classList.toggle('on',k===f||(k==='al'&&f==='airside_lager'));
-  });
-  renderOrders();
-}
-
-function renderOrders(){
-  const el=document.getElementById('orders-list');
-  const isDone=orderFilter==='done';
-  let filtered=allOrders.filter(o=>{
-    if(isDone) return ['angekommen','fehler'].includes(o.status);
-    if(orderFilter==='all') return !['angekommen','fehler'].includes(o.status);
-    return o.type===orderFilter&&!['angekommen','fehler'].includes(o.status);
-  });
-  if(!filtered.length){el.innerHTML='<div class="empty">📭 Keine Bestellungen</div>';return;}
-  el.innerHTML=filtered.map(o=>orderCard(o)).join('');
-}
-
-function orderCard(o){
-  const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
-  const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-ok',fehler:'b-err'}[o.status]||'b-offen';
-  const typeMap={lager:'📦 Landside→Lager',airside:'✈️ Landside→Airside',airside_lager:'🔄 Airside→Lager'};
-  const typeClass={lager:'t-lager',airside:'t-airside',airside_lager:'t-al'}[o.type]||'t-lager';
-  const preview=o.items.slice(0,2).map(i=>`${i.item||i.name}: ${i.qty}`).join(' · ');
-  return `<div class="card">
-    <div class="card-top">
-      <div>
-        <div class="card-name">${o.orderer}</div>
-        <div class="card-date">${o.date}</div>
-        <div class="type-tag ${typeClass}">${typeMap[o.type]||o.type}</div>
-      </div>
-      <span class="badge ${sc}">${sl}</span>
-    </div>
-    <div style="font-size:12px;color:#94a3b8;margin-top:4px;">${preview}</div>
-  </div>`;
-}
-
-// ─── ARTICLES ────────────────────────────────────────────
-function setArticleFilter(f){
-  articleFilter=f;
-  ['all','lager','airside','al'].forEach(k=>{
-    document.getElementById('fa-'+k)?.classList.toggle('on',k===f||(k==='al'&&f==='airside_lager'));
-  });
-  renderArticles();
-}
-
-function renderArticles(){
-  const el=document.getElementById('articles-list');
-  let filtered=allArticles;
-  if(articleFilter!=='all') filtered=allArticles.filter(a=>a.type===articleFilter);
-  
-  if(!filtered.length){el.innerHTML='<div class="empty">📦 Keine Artikel</div>';return;}
-  
-  const sections={};
-  filtered.forEach(a=>{
-    const key=`${a.type}::${a.section}`;
-    if(!sections[key]) sections[key]={type:a.type,section:a.section,items:[]};
-    sections[key].items.push(a);
-  });
-  
-  el.innerHTML=Object.values(sections).map(s=>`
-    <div class="art-section">
-      <div class="art-section-head">${s.section} <span style="font-size:10px;opacity:0.7;">${s.type}</span></div>
-      ${s.items.map(a=>`<div class="art-row">
-        ${a.image_url?`<img class="art-img" src="${a.image_url}">`:'<div class="art-ph">🖼️</div>'}
-        <div style="flex:1;min-width:0;">
-          <div class="art-name">${a.name}</div>
-          <div class="art-unit">${a.unit}</div>
-        </div>
-        <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
-        <button onclick="editArticleDash(${a.id},this.dataset.name,this.dataset.unit)" data-name="${a.name}" data-unit="${a.unit}" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">✏️</button>
-        <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
-      </div>`).join('')}
-    </div>`).join('');
-}
-
-// ─── STARTUP ─────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',()=>{
-  const sess=localStorage.getItem('dash_session');
-  const token=localStorage.getItem('dash_token');
-  if(sess&&parseInt(sess)>Date.now()&&token){
-    document.getElementById('login-screen').style.display='none';
-    loadAll();
-  }
-});
-
-// Auto refresh every 30 seconds
-setInterval(loadAll, 30000);
-// Run initial checks
-setTimeout(checkAlerts, 30000);
-setTimeout(checkSupabase, 15000);
-setTimeout(checkStatus, 1000);
-setInterval(checkStatus, 120000);
-
-// ─── ALERTS & MONITORING ─────────────────────────────────
-const OWNER_PHONE = "491743822643";
-let alertedOrders = new Set();
-let supabaseAlerted = false;
-
-function checkAlerts(){
-  const now = Date.now();
-  const oneHour = 60 * 60 * 1000;
-  
-  // Check for orders open longer than 1 hour
-  allOrders.forEach(o=>{
-    if(['angekommen','fehler'].includes(o.status)) return;
-    if(alertedOrders.has(o.id)) return;
-    const created = new Date(o.created_at).getTime();
-    if(now - created > oneHour){
-      alertedOrders.add(o.id);
-      const msg = `⚠️ *OFFENE BESTELLUNG SEIT 1 STUNDE*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${o.date}\n📦 ${o.type}\n\nBitte prüfen!`;
-      window.open(`https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(msg)}`,'_blank');
-      showAlert(`⚠️ Bestellung von ${o.orderer} seit über 1 Stunde offen!`,'orange');
-    }
-  });
-}
-
-function checkSupabase(){
-  api("GET","orders","?limit=1").then(data=>{
-    if(data===null && !supabaseAlerted){
-      supabaseAlerted = true;
-      const msg = `🔴 *SYSTEM FEHLER*\n━━━━━━━━━━━━━━━━━━━━\nSupabase ist nicht erreichbar!\nBitte sofort prüfen.`;
-      window.open(`https://wa.me/${OWNER_PHONE}?text=${encodeURIComponent(msg)}`,'_blank');
-      showAlert('🔴 Supabase nicht erreichbar!','red');
-    } else if(data !== null){
-      supabaseAlerted = false;
-    }
-  });
-}
-
-function showAlert(msg, type){
-  const colors = {red:'#dc2626', orange:'#f59e0b', green:'#16a34a'};
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;top:0;left:0;right:0;background:${colors[type]||colors.orange};color:white;padding:12px 16px;font-size:13px;font-weight:700;z-index:500;text-align:center;`;
-  el.textContent = msg;
-  document.body.prepend(el);
-  setTimeout(()=>el.remove(), 10000);
-}
-
-// Run checks every 5 minutes
-setInterval(checkAlerts, 5 * 60 * 1000);
-setInterval(checkSupabase, 5 * 60 * 1000);
-
-// ─── STATUS CHECK ────────────────────────────────────────
-async function checkStatus(){
-  const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-  
-  // Check DB
-  setStatus('db','checking','Prüfe...');
-  const orders = await api("GET","orders","?limit=1");
-  if(orders!==null){
-    setStatus('db','green',`Online · ${now}`);
-  } else {
-    setStatus('db','red','❌ Nicht erreichbar!');
-    if(!dbErrorSince) dbErrorSince=Date.now();
-    if(!dbAlertSent&&Date.now()-dbErrorSince>30000){
-      dbAlertSent=true;
-      sendOwnerAlert('🔴 *SYSTEM FEHLER*\nSupabase nicht erreichbar!\nBitte sofort prüfen.');
-    }
-  }
-
-  // Check orders table
-  const ordersCount = await api("GET","orders","?select=id");
-  if(ordersCount!==null){
-    setStatus('orders','green',`${ordersCount.length} Bestellungen`);
-  } else {
-    setStatus('orders','red','❌ Fehler!');
-  }
-
-  // Check articles table
-  const articlesCount = await api("GET","articles","?select=id");
-  if(articlesCount!==null){
-    setStatus('articles','green',`${articlesCount.length} Artikel`);
-  } else {
-    setStatus('articles','red','❌ Fehler!');
-  }
-
-  // Netlify - just check if page loaded
-  setStatus('netlify','green',`Online · ${now}`);
-}
-
-function setStatus(name, state, text){
-  const dot = document.getElementById('status-dot-'+name);
-  const label = document.getElementById('status-text-'+name);
-  if(dot){ dot.className='status-dot '+state; }
-  if(label){ label.textContent=text; }
-}
-
-// ─── OWNER ALERTS ────────────────────────────────────────
-const OWNER_WA="491743822643";
-let dbErrorSince=null,dbAlertSent=false,orderAlerts=new Set();
-
-function sendOwnerAlert(msg){
-  window.open('https://wa.me/'+OWNER_WA+'?text='+encodeURIComponent(msg),'_blank');
-}
-
-function checkOpenOrders(){
-  if(!allOrders.length) return;
-  const now=Date.now();
-  allOrders.forEach(o=>{
-    if(['angekommen','fehler','unterwegs'].includes(o.status)) return;
-    if(orderAlerts.has(o.id)) return;
-    const created=new Date(o.created_at).getTime();
-    if(now-created>20*60*1000){
-      orderAlerts.add(o.id);
-      sendOwnerAlert('⚠️ *OFFENE BESTELLUNG*\n━━━━━━━━━━━━━━━━━━━━\n👤 '+o.orderer+'\n📅 '+o.date+'\n🕐 Seit '+Math.floor((now-created)/60000)+' Min offen\n\nBitte prüfen!');
-    }
-  });
-}
-
-setTimeout(checkOpenOrders,10000);
-setInterval(checkOpenOrders,5*60*1000);
-
-// ─── ARTICLE MANAGEMENT ──────────────────────────────────
-async function addArticleDash(){
-  const name=document.getElementById('new-art-name').value.trim();
-  const unit=document.getElementById('new-art-unit').value.trim();
-  const type=document.getElementById('new-art-type').value;
-  let section=document.getElementById('new-art-section').value;
-  if(section==='__new__'){
-    section=document.getElementById('new-cat-input-dash').value.trim();
-    if(!section){alert('Bitte Kategorie eingeben.');return;}
-  }
-  if(!name||!unit||!type||!section){alert('Bitte alle Felder ausfüllen.');return;}
-  const r=await api("POST","articles","",{type,name,name_en:name,name_tr:name,unit,section});
-  if(r&&r[0]){
-    allArticles.push(r[0]);
-    document.getElementById('new-art-name').value='';
-    document.getElementById('new-art-unit').value='';
-    renderArticles();
-    alert('✅ Artikel hinzugefügt!');
+  // Offene Bestellungen in Übersicht
+  const oEl=$('overview-orders');
+  if(!open.length){oEl.innerHTML='<div class="empty">✅ Keine offenen Bestellungen</div>';return;}
+  oEl.innerHTML='';
+  open.slice(0,5).forEach(o=>{oEl.appendChild(buildOrderCard(o,false));});
+  if(open.length>5){
+    const more=document.createElement('div');
+    more.style.cssText='text-align:center;font-size:12px;color:var(--text-3);padding:8px;cursor:pointer;';
+    more.textContent=`+ ${open.length-5} weitere → Bestellungen-Tab`;
+    more.onclick=()=>showTab('orders');
+    oEl.appendChild(more);
   }
 }
 
-async function deleteArticleDash(id,name){
-  if(!confirm('"'+name+'" löschen?')) return;
-  await api("DELETE","articles","?id=eq."+id);
-  allArticles=allArticles.filter(a=>a.id!==id);
-  renderArticles();
-}
-
-async function uploadImgDash(input,id){
-  const file=input.files[0]; if(!file) return;
-  const path="dash_"+id+"_"+Date.now()+"."+file.name.split('.').pop();
-  const token=localStorage.getItem('dash_token');
-  const r=await fetch("https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/artikel-bilder/"+path,{
-    method:'POST',
-    headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':file.type},
-    body:file
-  });
-  if(r.ok){
-    const url="https://xltsjtbbbykftmjkhcjm.supabase.co/storage/v1/object/public/artikel-bilder/"+path;
-    await api("PATCH","articles","?id=eq."+id,{image_url:url});
-    const a=allArticles.find(x=>x.id===id);
-    if(a) a.image_url=url;
-    renderArticles();
-    alert('✅ Bild hochgeladen!');
-  }
-}
-
-function populateSectionSelect(){
-  const typeEl=document.getElementById('new-art-type');
-  const secEl=document.getElementById('new-art-section');
-  if(!typeEl||!secEl) return;
-  const type=typeEl.value;
-  const cats=[...new Set(allArticles.filter(a=>a.type===type).map(a=>a.section).filter(Boolean))].sort();
-  secEl.innerHTML='<option value="">-- Kategorie wählen --</option>';
-  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;secEl.appendChild(o);});
-  const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='➕ Neue Kategorie';secEl.appendChild(newOpt);
-  secEl.onchange=function(){
-    const wrap=document.getElementById('new-cat-wrap-dash');
-    if(wrap) wrap.style.display=this.value==='__new__'?'block':'none';
-  };
-}
-
-function searchArticlesDash(q){
-  if(!q){ renderArticles(); return; }
-  const ql=q.toLowerCase();
-  const el=document.getElementById('articles-list');
-  const filtered=allArticles.filter(a=>
-    a.name.toLowerCase().includes(ql)||
-    (a.section&&a.section.toLowerCase().includes(ql))
-  );
-  if(!filtered.length){el.innerHTML='<div class="empty">Nicht gefunden</div>';return;}
-  const sections={};
-  filtered.forEach(a=>{
-    const key=a.type+'::'+a.section;
-    if(!sections[key]) sections[key]={type:a.type,section:a.section,items:[]};
-    sections[key].items.push(a);
-  });
-  el.innerHTML=Object.values(sections).map(s=>`
-    <div class="art-section">
-      <div class="art-section-head">${s.section} <span style="font-size:10px;opacity:0.7;">${s.type}</span></div>
-      ${s.items.map(a=>`<div class="art-row">
-        ${a.image_url?`<img class="art-img" src="${a.image_url}">`:'<div class="art-ph">🖼️</div>'}
-        <div style="flex:1;min-width:0;"><div class="art-name">${a.name}</div><div class="art-unit">${a.unit}</div></div>
-        <label style="background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">📷<input type="file" accept="image/*" style="display:none;" onchange="uploadImgDash(this,${a.id})"/></label>
-        <button onclick="editArticleDash(${a.id},this.dataset.name,this.dataset.unit)" data-name="${a.name}" data-unit="${a.unit}" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">✏️</button>
-        <button onclick="deleteArticleDash(${a.id},this.dataset.name)" data-name="${a.name}" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🗑</button>
-      </div>`).join('')}
-    </div>`).join('');
-}
-
-async function editArticleDash(id, name, unit){
-  const newName=prompt('Name:', name);
-  if(!newName) return;
-  const newUnit=prompt('Einheit:', unit);
-  if(!newUnit) return;
-  await api("PATCH","articles","?id=eq."+id,{name:newName,unit:newUnit});
-  const a=allArticles.find(x=>x.id===id);
-  if(a){a.name=newName;a.unit=newUnit;}
-  renderArticles();
-}
-
-// ─── DELIVERY TIMES ──────────────────────────────────────
 function calcDeliveryTimes(doneOrders){
-  const el=document.getElementById('delivery-stats');
-  if(!el) return;
-  
-  if(!doneOrders.length){
-    el.style.display='none';
-    return;
-  }
-  
-  // Calculate minutes from created_at to status_time
   const times=[];
   doneOrders.forEach(o=>{
     if(!o.created_at||!o.status_time) return;
     try{
       const created=new Date(o.created_at).getTime();
-      // Parse status_time "18.05.2026, 14:32"
       const parts=o.status_time.split(', ');
       if(parts.length<2) return;
-      const dateParts=parts[0].split('.');
-      const timeParts=parts[1].split(':');
-      const done=new Date(dateParts[2],dateParts[1]-1,dateParts[0],timeParts[0],timeParts[1]).getTime();
+      const dp=parts[0].split('.');
+      const tp=parts[1].split(':');
+      const done=new Date(dp[2],dp[1]-1,dp[0],tp[0],tp[1]).getTime();
       const mins=Math.round((done-created)/60000);
       if(mins>0&&mins<300) times.push(mins);
     }catch(e){}
   });
-  
+  const el=$('delivery-stats');
   if(!times.length){el.style.display='none';return;}
-  
   el.style.display='block';
   const avg=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
-  const min=Math.min(...times);
-  const max=Math.max(...times);
-  
-  document.getElementById('del-avg').textContent=avg+' Min';
-  document.getElementById('del-avg').className='delivery-val '+(avg<15?'good':avg<30?'warn':'bad');
-  document.getElementById('del-min').textContent=min+' Min';
-  document.getElementById('del-max').textContent=max+' Min';
-  document.getElementById('del-count').textContent=doneOrders.length+' Bestellungen';
+  $('dt-avg').textContent=avg+' Min';
+  $('dt-min').textContent=Math.min(...times)+' Min';
+  $('dt-max').textContent=Math.max(...times)+' Min';
 }
 
-// ─── USER MANAGEMENT ─────────────────────────────────────
-const OWNER_ID="dbeecae7-3b37-4c66-91fd-820fe6e55ac1";
+// ── ORDERS ───────────────────────────────────────────────────
+function renderOrders(){
+  const el=$('orders-list');
+  const isDone=_orderFilter==='done';
+  let filtered=_allOrders.filter(o=>{
+    if(isDone) return ['angekommen','fehler'].includes(o.status);
+    if(_orderFilter==='all') return !['angekommen','fehler'].includes(o.status);
+    return o.type===_orderFilter&&!['angekommen','fehler'].includes(o.status);
+  });
+  el.innerHTML='';
+  if(!filtered.length){el.innerHTML='<div class="empty">📭 Keine Bestellungen</div>';return;}
+  filtered.forEach(o=>el.appendChild(buildOrderCard(o,true)));
+}
 
-async function loadUsers(){
-  const el=document.getElementById('users-list');
-  const pendingEl=document.getElementById('pending-list');
-  if(!el) return;
-  el.innerHTML='<div style="text-align:center;padding:20px;color:#64748b;">⏳ Lädt...</div>';
-  
-  // Load pending users from pending_users table
-  try{
-    const roles=await api("GET","user_roles","?order=created_at.asc")||[];
-    const assignedIds=new Set(roles.map(r=>r.user_id));
-    
-    const pendingUsers=await api("GET","pending_users","?order=created_at.desc")||[];
-    const pending=pendingUsers.filter(u=>!assignedIds.has(u.user_id));
-    
-    if(pendingEl){
-      if(!pending.length){
-        pendingEl.innerHTML='<div style="font-size:13px;color:#64748b;padding:8px 0;">Keine ausstehenden Registrierungen</div>';
-      } else {
-        pendingEl.innerHTML=pending.map(u=>`
-          <div style="background:#1e293b;border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid #f59e0b33;">
-            <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:8px;">${u.email}</div>
-            <div style="display:flex;gap:8px;">
-              <select id="role-${u.user_id}" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">
-                <option value="besteller">🛒 Besteller</option>
-                <option value="lager">📦 Lager</option>
-                <option value="admin">⚙️ Admin</option>
-              </select>
-              <button onclick="approveUser('${u.user_id}','${u.email}')" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✅ Freischalten</button>
-              <button onclick="denyUser('${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
-            </div>
-          </div>`).join('');
-      }
-    }
-  }catch(e){
-    if(pendingEl) pendingEl.innerHTML='<div style="font-size:13px;color:#64748b;">Konnte nicht laden</div>';
+function buildOrderCard(o, showStatusChange){
+  const statusMap={offen:'⏳ Offen',bestaetigt:'Bestätigt',unterwegs:'Unterwegs',angekommen:'Angekommen',fehler:'Teilweise'};
+  const badgeMap={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-info',angekommen:'b-done',fehler:'b-err'};
+  const typeMap={lager:'📦 Landside→Lager',airside:'✈️ Airside→Landside',airside_lager:'🔄 Airside→Lager'};
+  const typeClass={lager:'t-lager',airside:'t-airside',airside_lager:'t-al'}[o.type]||'t-lager';
+  const preview=o.items.slice(0,3).map(i=>`${esc(i.item||i.name)}: ${i.qty}`).join(' · ')+(o.items.length>3?` +${o.items.length-3} mehr`:'');
+
+  const card=document.createElement('div');
+  card.className='o-card';
+
+  card.innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+      <div style="flex:1;min-width:0;">
+        <div class="o-name">${esc(o.orderer)}</div>
+        <div class="o-date">${esc(o.date||'')}</div>
+        <div class="o-type ${typeClass}">${typeMap[o.type]||o.type}</div>
+      </div>
+      <span class="badge ${badgeMap[o.status]||'b-offen'}">${statusMap[o.status]||'Offen'}</span>
+    </div>
+    <div class="o-preview">${preview}</div>
+  `;
+
+  // Delivery Details wenn vorhanden
+  if(o.delivery&&o.delivery.length){
+    const dd=document.createElement('div');
+    dd.style.cssText='margin-top:8px;background:rgba(0,0,0,.2);border-radius:8px;padding:8px;';
+    o.delivery.forEach(d=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;';
+      const icon=d.status==='ok'?'✅':d.status==='partial'?'⚠️':'❌';
+      const qty=d.status==='ok'?`${d.qty}/${d.qty}`:d.status==='partial'?`${d.delivered}/${d.qty}`:`0/${d.qty}`;
+      const color=d.status==='ok'?'var(--ok)':d.status==='partial'?'var(--warn)':'var(--err)';
+      row.innerHTML=`<span style="flex-shrink:0;">${icon}</span><span style="flex:1;color:var(--text-2);">${esc(d.item)}</span><span style="font-weight:800;color:${color};">${qty}</span>`;
+      dd.appendChild(row);
+    });
+    card.appendChild(dd);
   }
-  
-  const roles2=await api("GET","user_roles","?order=created_at.asc")||[];
-  const visible=roles2.filter(u=>u.user_id!==OWNER_ID);
-  el.innerHTML=visible.map(u=>{
-    const roleLabel={admin:'⚙️ Admin',besteller:'🛒 Besteller',lager:'📦 Lager'}[u.role]||u.role;
-    const roleColor={admin:'#7c3aed',besteller:'#2563eb',lager:'#16a34a'}[u.role]||'#64748b';
-    return `<div style="background:#1e293b;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #334155;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#f1f5f9;">${u.email||u.user_id.substring(0,12)+'...'}</div>
-          <div style="font-size:11px;color:#64748b;">Seit ${new Date(u.created_at).toLocaleDateString('de-DE')}</div>
-        </div>
-        <span style="background:${roleColor}22;color:${roleColor};padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;">${roleLabel}</span>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <select onchange="changeRole('${u.id}',this.value)" style="flex:1;background:#0f172a;border:1.5px solid #334155;border-radius:8px;padding:7px;font-size:12px;color:#f1f5f9;font-family:inherit;outline:none;">
-          <option value="besteller" ${u.role==='besteller'?'selected':''}>🛒 Besteller</option>
-          <option value="lager" ${u.role==='lager'?'selected':''}>📦 Lager</option>
-          <option value="admin" ${u.role==='admin'?'selected':''}>⚙️ Admin</option>
-        </select>
-        <button onclick="resetPassword('${u.email}')" style="background:#fef3c7;color:#b45309;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🔑</button>
-        <button onclick="removeUser('${u.id}','${u.user_id}')" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
 
-async function changeRole(roleId, newRole){
-  await api("PATCH","user_roles","?id=eq."+roleId,{role:newRole});
-  loadUsers();
-}
-
-async function removeUser(roleId, userId){
-  if(!confirm('Mitarbeiter entfernen?')) return;
-  await api("DELETE","user_roles","?id=eq."+roleId);
-  loadUsers();
-}
-
-async function inviteUser(){
-  const email=document.getElementById('invite-email').value.trim();
-  const pw=document.getElementById('invite-pw').value;
-  const role=document.getElementById('invite-role').value;
-  if(!email||!pw){alert('Bitte Email und Passwort eingeben.');return;}
-  try{
-    const token=localStorage.getItem('dash_token');
-    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/admin/users',{
-      method:'POST',
-      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body:JSON.stringify({email,password:pw,email_confirm:true})
+  // Status-Änderung (nur in Bestellungen-Tab)
+  if(showStatusChange&&!['angekommen','fehler'].includes(o.status)){
+    const sel=document.createElement('select');
+    sel.className='status-select';
+    [['offen','⏳ Offen'],['bestaetigt','✅ Bestätigt'],['unterwegs','🚚 Unterwegs'],['angekommen','✅ Angekommen']].forEach(([v,l])=>{
+      const opt=document.createElement('option');
+      opt.value=v; opt.textContent=l;
+      if(v===o.status) opt.selected=true;
+      sel.appendChild(opt);
     });
-    const data=await r.json();
-    if(data.id){
-      await api("POST","user_roles","",{user_id:data.id,role});
-      document.getElementById('invite-email').value='';
-      document.getElementById('invite-pw').value='';
-      alert('✅ Mitarbeiter hinzugefügt!');
-      loadUsers();
-    } else {
-      alert('❌ Fehler: '+JSON.stringify(data));
-    }
-  }catch(e){alert('❌ Fehler: '+e.message);}
+    sel.onchange=async()=>{
+      const now=new Date().toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      await api('PATCH','orders',`?id=eq.${o.id}`,{status:sel.value,status_time:now});
+      const idx=_allOrders.findIndex(x=>x.id===o.id);
+      if(idx>=0) _allOrders[idx].status=sel.value;
+      toast(`Status: ${sel.options[sel.selectedIndex].text}`,'success');
+      renderOrders();
+    };
+    card.appendChild(sel);
+  }
+
+  return card;
 }
 
-async function resetPassword(email){
-  if(!email){alert('Email nicht verfügbar.');return;}
-  if(!confirm('Passwort-Reset Email an '+email+' senden?')) return;
-  try{
-    const r=await fetch('https://xltsjtbbbykftmjkhcjm.supabase.co/auth/v1/recover',{
-      method:'POST',
-      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsdHNqdGJiYnlrZnRtamtoY2ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3NzIyNzAsImV4cCI6MjA5NDM0ODI3MH0.-2f3zJpA-8-KhNrpse5gBBH6wTEa7sR0DN36AOBFkss','Content-Type':'application/json'},
-      body:JSON.stringify({email,redirect_to:'https://airport-dus-boname.netlify.app/login.html'})
+// ── ARTICLES ─────────────────────────────────────────────────
+function renderArticles(articles=null){
+  const el=$('articles-list');
+  let data=articles||(
+    _articleFilter==='all'?_allArticles:_allArticles.filter(a=>a.type===_articleFilter)
+  );
+  if(!data.length){el.innerHTML='<div class="empty">📦 Keine Artikel</div>';return;}
+  const sections={};
+  data.forEach(a=>{
+    const k=`${a.type}::${a.section||'Sonstige'}`;
+    if(!sections[k]) sections[k]={type:a.type,section:a.section||'Sonstige',items:[]};
+    sections[k].items.push(a);
+  });
+  el.innerHTML='';
+  Object.values(sections).forEach(s=>{
+    const sec=document.createElement('div');
+    sec.className='art-section';
+    const head=document.createElement('div');
+    head.className='art-head';
+    head.textContent=`${s.section}  ·  ${s.type}`;
+    sec.appendChild(head);
+    s.items.forEach(a=>{
+      const row=document.createElement('div');
+      row.className='art-row';
+      if(a.image_url){
+        const img=document.createElement('img');
+        img.className='art-img';img.src=a.image_url;
+        img.onerror=function(){this.outerHTML='<div class="art-ph">🖼️</div>';};
+        row.appendChild(img);
+      }else{
+        const ph=document.createElement('div');ph.className='art-ph';ph.textContent='🖼️';
+        row.appendChild(ph);
+      }
+      const info=document.createElement('div');
+      info.style.flex='1';info.style.minWidth='0';
+      info.innerHTML=`<div class="art-name">${esc(a.name)}</div><div class="art-unit">${esc(a.unit||'')}</div>`;
+      if(a.is_active===false){
+        const inactive=document.createElement('span');
+        inactive.style.cssText='font-size:10px;color:var(--err);font-weight:700;';
+        inactive.textContent=' · Inaktiv';
+        info.querySelector('.art-unit').appendChild(inactive);
+      }
+      row.appendChild(info);
+      // Bild-Upload
+      const imgLabel=document.createElement('label');
+      imgLabel.className='btn btn-info';imgLabel.title='Bild hochladen';imgLabel.textContent='📷';imgLabel.style.cursor='pointer';
+      const fileInp=document.createElement('input');fileInp.type='file';fileInp.accept='image/*';fileInp.style.display='none';
+      fileInp.onchange=()=>uploadImg(fileInp,a.id,a.name);
+      imgLabel.appendChild(fileInp);
+      // Edit
+      const editBtn=document.createElement('button');editBtn.className='btn btn-warn';editBtn.title='Bearbeiten';editBtn.textContent='✏️';
+      editBtn.onclick=()=>editArticle(a.id,a.name,a.unit);
+      // Delete
+      const delBtn=document.createElement('button');delBtn.className='btn btn-err';delBtn.title='Löschen';delBtn.textContent='🗑';
+      delBtn.onclick=()=>deleteArticle(a.id,a.name);
+      row.appendChild(imgLabel);row.appendChild(editBtn);row.appendChild(delBtn);
+      sec.appendChild(row);
     });
-    if(r.ok){
-      alert('✅ Reset-Email wurde gesendet an '+email);
-    } else {
-      alert('❌ Fehler beim Senden');
+    el.appendChild(sec);
+  });
+}
+
+function searchArticles(q){
+  if(!q){renderArticles();return;}
+  const ql=q.toLowerCase();
+  renderArticles(_allArticles.filter(a=>a.name.toLowerCase().includes(ql)||(a.section&&a.section.toLowerCase().includes(ql))));
+}
+
+function populateSectionSelect(){
+  const type=$('new-art-type').value;
+  const sel=$('new-art-section');
+  const cats=[...new Set(_allArticles.filter(a=>a.type===type).map(a=>a.section).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">-- Kategorie wählen --</option>';
+  cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+  const nw=document.createElement('option');nw.value='__new__';nw.textContent='➕ Neue Kategorie anlegen...';sel.appendChild(nw);
+  sel.onchange=function(){$('new-cat-wrap').style.display=this.value==='__new__'?'block':'none';};
+}
+
+async function addArticle(){
+  const name=$('new-art-name').value.trim();
+  const unit=$('new-art-unit').value.trim();
+  const type=$('new-art-type').value;
+  let section=$('new-art-section').value;
+  if(section==='__new__') section=$('new-cat-inp').value.trim();
+  if(!name||!unit||!type||!section){toast('Bitte alle Felder ausfüllen','warning');return;}
+  const btn=$('add-art-btn');btn.disabled=true;btn.textContent='⏳...';
+  const r=await api('POST','articles','',{type,name,name_en:name,name_tr:name,unit,section,is_active:true,sort_order:_allArticles.length});
+  btn.disabled=false;btn.textContent='✅ Artikel hinzufügen';
+  if(!r||!r[0]){toast('Fehler beim Hinzufügen','error');return;}
+  _allArticles.push(r[0]);
+  $('new-art-name').value='';$('new-art-unit').value='';
+  renderArticles();
+  toast(`"${name}" hinzugefügt`,'success');
+}
+
+async function editArticle(id,name,unit){
+  const newName=prompt('Name:',name);
+  if(!newName) return;
+  const newUnit=prompt('Einheit:',unit);
+  if(!newUnit) return;
+  await api('PATCH','articles',`?id=eq.${id}`,{name:newName,unit:newUnit});
+  const a=_allArticles.find(x=>x.id===id);
+  if(a){a.name=newName;a.unit=newUnit;}
+  renderArticles();
+  toast('Gespeichert','success');
+}
+
+async function deleteArticle(id,name){
+  if(!confirm(`"${name}" löschen?`)) return;
+  await api('DELETE','articles',`?id=eq.${id}`);
+  _allArticles=_allArticles.filter(a=>a.id!==id);
+  renderArticles();
+  toast(`"${name}" gelöscht`,'success');
+}
+
+async function uploadImg(input,id,name){
+  const file=input.files[0];if(!file) return;
+  if(!file.type.startsWith('image/')){toast('Nur Bilddateien','warning');return;}
+  if(file.size>5*1024*1024){toast('Max 5 MB','warning');return;}
+  toast('Bild wird hochgeladen...','info');
+  const path=name.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'_'+id+'_'+Date.now()+'.'+file.name.split('.').pop();
+  const r=await fetch(`${SB}/storage/v1/object/artikel-bilder/${path}`,{
+    method:'POST',headers:{'apikey':KEY,'Authorization':'Bearer '+_token,'Content-Type':file.type},body:file
+  });
+  if(!r.ok){toast('Upload fehlgeschlagen','error');return;}
+  const url=`${SB}/storage/v1/object/public/artikel-bilder/${path}`;
+  await api('PATCH','articles',`?id=eq.${id}`,{image_url:url});
+  const a=_allArticles.find(x=>x.id===id);
+  if(a) a.image_url=url;
+  renderArticles();
+  toast('Bild hochgeladen','success');
+}
+
+// ── USERS ────────────────────────────────────────────────────
+async function loadUsers(){
+  const [pending,roles]=await Promise.all([
+    api('GET','pending_users','?order=created_at.desc'),
+    api('GET','user_roles','?order=created_at.asc')
+  ]);
+  const approvedIds=new Set((roles||[]).map(r=>r.user_id));
+  const pendingF=(pending||[]).filter(u=>!approvedIds.has(u.user_id));
+  const activeF=(roles||[]).filter(u=>u.user_id!==OWNER_ID);
+
+  $('pending-title').textContent=`⏳ Ausstehend (${pendingF.length})`;
+  $('active-title').textContent=`👥 Aktive Mitarbeiter (${activeF.length})`;
+
+  // Pending
+  const pEl=$('users-pending');
+  if(!pendingF.length){pEl.innerHTML='<div style="font-size:13px;color:var(--text-3);padding:8px 0;">✅ Keine ausstehenden Anfragen</div>';}
+  else{
+    pEl.innerHTML='';
+    pendingF.forEach(u=>{
+      const row=document.createElement('div');row.className='user-row';
+      const av=document.createElement('div');av.className='user-avatar u-pending';av.textContent=(u.full_name||u.email||'?')[0].toUpperCase();
+      const info=document.createElement('div');info.className='user-info';
+      info.innerHTML=`<div class="user-name">${esc(u.full_name||'–')}</div><div class="user-email">${esc(u.email||'')}</div>`;
+      const sel=document.createElement('select');
+      sel.style.cssText='background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--text-1);font-family:inherit;margin-top:4px;';
+      [['airside','✈️ Airside'],['lager','📦 Lager'],['admin','🔴 Admin']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;sel.appendChild(o);});
+      info.appendChild(sel);
+      const btns=document.createElement('div');btns.style.cssText='display:flex;gap:4px;flex-shrink:0;';
+      const aBtn=document.createElement('button');aBtn.className='btn btn-ok';aBtn.textContent='✅';aBtn.title='Freischalten';
+      aBtn.onclick=async()=>{
+        await api('POST','user_roles','',{user_id:u.user_id,role:sel.value,email:u.email});
+        await api('DELETE','pending_users',`?user_id=eq.${u.user_id}`);
+        toast(`${u.full_name||u.email} freigeschaltet`,'success');
+        loadUsers();
+      };
+      const dBtn=document.createElement('button');dBtn.className='btn btn-err';dBtn.textContent='✕';dBtn.title='Ablehnen';
+      dBtn.onclick=async()=>{
+        if(!confirm('Ablehnen?')) return;
+        await api('DELETE','pending_users',`?user_id=eq.${u.user_id}`);
+        toast('Abgelehnt','info');loadUsers();
+      };
+      btns.appendChild(aBtn);btns.appendChild(dBtn);
+      row.appendChild(av);row.appendChild(info);row.appendChild(btns);
+      pEl.appendChild(row);
+    });
+  }
+
+  // Active
+  const aEl=$('users-active');
+  if(!activeF.length){aEl.innerHTML='<div style="font-size:13px;color:var(--text-3);padding:8px 0;">Noch keine Mitarbeiter freigeschaltet</div>';}
+  else{
+    aEl.innerHTML='';
+    activeF.forEach(u=>{
+      const roleColors={airside:'#1e40af',lager:'#92400e',admin:'#991b1b'};
+      const roleLabels={airside:'✈️ Airside',lager:'📦 Lager',admin:'🔴 Admin'};
+      const row=document.createElement('div');row.className='user-row';
+      const av=document.createElement('div');av.className='user-avatar u-active';av.textContent=(u.email||'?')[0].toUpperCase();
+      const info=document.createElement('div');info.className='user-info';
+      const rb=`<span class="role-badge" style="background:${roleColors[u.role]||'#334155'};color:white;">${roleLabels[u.role]||u.role}</span>`;
+      info.innerHTML=`<div class="user-name">${esc(u.email||u.user_id.substring(0,12)+'...')}</div>${rb}`;
+      const delBtn=document.createElement('button');delBtn.className='btn btn-err';delBtn.textContent='🚫';delBtn.title='Sperren';
+      delBtn.onclick=async()=>{
+        if(!confirm(`${u.email} sperren?`)) return;
+        await api('DELETE','user_roles',`?id=eq.${u.id}`);
+        toast(`${u.email} gesperrt`,'success');loadUsers();
+      };
+      row.appendChild(av);row.appendChild(info);row.appendChild(delBtn);
+      aEl.appendChild(row);
+    });
+  }
+}
+
+// ── STATUS CHECK ─────────────────────────────────────────────
+async function checkStatus(){
+  const now=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  setS('db','checking','Prüfe...');
+  const orders=await api('GET','orders','?limit=1');
+  if(orders!==null){setS('db','green',`Online · ${now}`);}
+  else{setS('db','red','❌ Nicht erreichbar!');}
+  const oCount=await api('GET','orders','?select=id');
+  setS('orders','green',oCount?`${oCount.length} Bestellungen`:'– Fehler');
+  const aCount=await api('GET','articles','?select=id');
+  setS('articles','green',aCount?`${aCount.length} Artikel`:'– Fehler');
+  setS('netlify','green',`Online · ${now}`);
+}
+
+function setS(name,state,text){
+  const d=$('sd-'+name);const l=$('st-'+name);
+  if(d) d.className='s-dot '+state;
+  if(l) l.textContent=text;
+}
+
+// ── OPEN ORDER ALERTS ────────────────────────────────────────
+const _alertedOrders=new Set();
+function checkOpenOrders(){
+  const now=Date.now();
+  _allOrders.forEach(o=>{
+    if(['angekommen','fehler','unterwegs'].includes(o.status)) return;
+    if(_alertedOrders.has(o.id)) return;
+    const created=new Date(o.created_at).getTime();
+    if(now-created>20*60*1000){
+      _alertedOrders.add(o.id);
+      showAlertBanner(`⚠️ Bestellung von ${o.orderer} seit ${Math.floor((now-created)/60000)} Min offen!`,'#f59e0b');
     }
-  }catch(e){alert('❌ Fehler: '+e.message);}
+  });
 }
 
-async function approveUser(userId, email){
-  const role=document.getElementById('role-'+userId)?.value||'besteller';
-  await api("POST","user_roles","",{user_id:userId,role});
-  // Remove from pending
-  await api("DELETE","pending_users","?user_id=eq."+userId);
-  alert('✅ '+email+' wurde freigeschaltet als '+role+'!');
-  loadUsers();
+function showAlertBanner(msg,color='#f59e0b'){
+  const el=$('alert-banner');
+  el.style.cssText=`display:block;background:${color};color:white;padding:10px 16px;font-size:12px;font-weight:700;text-align:center;position:fixed;top:0;left:0;right:0;z-index:999;`;
+  el.textContent=msg;
+  setTimeout(()=>{el.style.display='none';},10000);
 }
 
-async function denyUser(userId){
-  if(!confirm('Registrierung ablehnen?')) return;
-  await api("DELETE","pending_users","?user_id=eq."+userId);
-  loadUsers();
+// ── SYSTEM TESTS ─────────────────────────────────────────────
+function initSystemTests(){
+  $('run-tests-btn').onclick=runAllTests;
 }
+
+function setTestResult(id,type,msg){
+  const el=$('tr-'+id);
+  el.className='test-result '+type;
+  el.innerHTML=msg;
+}
+
+async function runAllTests(){
+  const btn=$('run-tests-btn');
+  btn.disabled=true;btn.textContent='⏳ Tests laufen...';
+
+  // Reset
+  ['supabase','auth','articles','emp','delivery','rls','stale','sw'].forEach(id=>{
+    const el=$('tr-'+id);
+    el.className='test-result info';
+    el.innerHTML='<span class="spinner"></span>Prüfe...';
+  });
+
+  // Test 1: Supabase
+  const orders=await api('GET','orders','?limit=1');
+  if(orders!==null) setTestResult('supabase','ok',`✅ Verbindung OK – Datenbank erreichbar`);
+  else setTestResult('supabase','err','❌ Supabase nicht erreichbar! Bitte Verbindung prüfen.');
+
+  // Test 2: Auth
+  const roles=await api('GET','user_roles','?limit=1');
+  const admins=await api('GET','admin_users','?limit=1');
+  if(roles!==null&&admins!==null) setTestResult('auth','ok',`✅ user_roles und admin_users Tabellen OK`);
+  else if(roles===null) setTestResult('auth','err','❌ user_roles Tabelle nicht erreichbar!');
+  else setTestResult('auth','err','❌ admin_users Tabelle nicht erreichbar!');
+
+  // Test 3: Artikel
+  const arts=await api('GET','articles','?select=type');
+  if(arts){
+    const types=[...new Set(arts.map(a=>a.type))];
+    const missing=['lager','airside','airside_lager'].filter(t=>!types.includes(t));
+    if(!missing.length) setTestResult('articles','ok',`✅ Alle 3 Typen haben Artikel (${arts.length} total)`);
+    else setTestResult('articles','warn',`⚠️ Fehlende Artikel-Typen: ${missing.join(', ')}`);
+  } else setTestResult('articles','err','❌ Artikel-Tabelle nicht erreichbar!');
+
+  // Test 4: Empfänger-Seite
+  try{
+    const r=await fetch('/empfaenger.html',{method:'HEAD'});
+    if(r.ok) setTestResult('emp','ok','✅ empfaenger.html erreichbar (HTTP '+r.status+')');
+    else setTestResult('emp','err','❌ empfaenger.html nicht erreichbar (HTTP '+r.status+')');
+  }catch(e){
+    setTestResult('emp','err','❌ empfaenger.html nicht erreichbar: '+e.message);
+  }
+
+  // Test 5: Delivery Feld
+  const recentOrders=await api('GET','orders','?limit=5&order=created_at.desc');
+  if(recentOrders){
+    const hasDelivery=recentOrders.some(o=>'delivery' in o);
+    if(hasDelivery||recentOrders.length===0) setTestResult('delivery','ok','✅ delivery-Feld vorhanden in orders Tabelle');
+    else setTestResult('delivery','warn','⚠️ delivery-Feld fehlt noch in orders – ältere Bestellungen ohne Status');
+  } else setTestResult('delivery','err','❌ orders Tabelle nicht erreichbar!');
+
+  // Test 6: RLS (simuliert – wir prüfen ob anonyme Anfragen blockiert werden)
+  try{
+    const anonR=await fetch(`${SB}/rest/v1/admin_users`,{headers:{'apikey':KEY}});
+    if(anonR.status===401||anonR.status===403) setTestResult('rls','ok','✅ RLS aktiv – anonymer Zugriff auf admin_users blockiert');
+    else if(anonR.ok){
+      const data=await anonR.json();
+      if(!data.length) setTestResult('rls','warn','⚠️ RLS Status unklar – keine Daten zurückgegeben (könnte ok sein)');
+      else setTestResult('rls','err','❌ Mögliche RLS-Lücke: admin_users ohne Auth lesbar!');
+    }
+  }catch(e){setTestResult('rls','warn','⚠️ RLS-Check nicht möglich: '+e.message);}
+
+  // Test 7: Veraltete Bestellungen
+  const offeneOrders=(await api('GET','orders','?order=created_at.asc')||[]).filter(o=>!['angekommen','fehler'].includes(o.status));
+  if(!offeneOrders.length){
+    setTestResult('stale','ok','✅ Keine offenen Bestellungen');
+  } else {
+    const now=Date.now();
+    const stale=offeneOrders.filter(o=>now-new Date(o.created_at).getTime()>30*60*1000);
+    if(!stale.length) setTestResult('stale','ok',`✅ ${offeneOrders.length} offene Bestellungen – alle unter 30 Min`);
+    else setTestResult('stale','warn',`⚠️ ${stale.length} Bestellung(en) seit über 30 Min offen:\n${stale.map(o=>`${o.orderer} (${Math.floor((now-new Date(o.created_at).getTime())/60000)} Min)`).join(', ')}`);
+  }
+
+  // Test 8: Service Worker
+  if('serviceWorker' in navigator){
+    const regs=await navigator.serviceWorker.getRegistrations();
+    if(regs.length>0){
+      const sw=regs[0];
+      setTestResult('sw','ok',`✅ Service Worker aktiv · Scope: ${sw.scope} · Status: ${sw.active?.state||'unbekannt'}`);
+    } else {
+      setTestResult('sw','warn','⚠️ Kein Service Worker registriert – Offline-Modus nicht verfügbar');
+    }
+  } else {
+    setTestResult('sw','warn','⚠️ Service Worker nicht unterstützt von diesem Browser');
+  }
+
+  btn.disabled=false;btn.textContent='🔄 Tests wiederholen';
+  toast('Alle Tests abgeschlossen','success');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',function(){
+  // Login Events
+  $('login-btn').addEventListener('click',doLogin);
+  $('login-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  $('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')$('login-pw').focus();});
+  $('logout-btn').addEventListener('click',doLogout);
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.addEventListener('click',()=>showTab(b.dataset.tab));
+  });
+
+  // Order Filter
+  document.querySelectorAll('[data-of]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      _orderFilter=b.dataset.of;
+      document.querySelectorAll('[data-of]').forEach(x=>x.classList.toggle('on',x===b));
+      renderOrders();
+    });
+  });
+
+  // Article Filter
+  document.querySelectorAll('[data-af]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      _articleFilter=b.dataset.af;
+      document.querySelectorAll('[data-af]').forEach(x=>x.classList.toggle('on',x===b));
+      renderArticles();
+    });
+  });
+
+  // Artikel hinzufügen
+  $('add-art-btn').addEventListener('click',addArticle);
+
+  // Session wiederherstellen
+  const token=localStorage.getItem('dash_token');
+  const exp=parseInt(localStorage.getItem('dash_exp')||'0');
+  if(token&&exp>Date.now()){
+    _token=token;
+    $('login-screen').style.display='none';
+    $('app').style.display='block';
+    loadAll();
+  }
+
+  // Auto-Refresh alle 30 Sek
+  setInterval(loadAll,30000);
+  setInterval(checkStatus,120000);
+  setInterval(checkOpenOrders,5*60*1000);
+});
+
+// Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));
+}
+
+})();
 </script>
-
-<!-- USERS -->
-<div id="page-users" style="display:none;">
-  <div class="wrap">
-    <div style="background:#1e293b;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #334155;">
-      <div style="font-size:13px;font-weight:800;color:#f1f5f9;margin-bottom:10px;">➕ Mitarbeiter hinzufügen</div>
-      <input type="email" id="invite-email" placeholder="Email Adresse" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
-      <input type="password" id="invite-pw" placeholder="Passwort" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;"/>
-      <select id="invite-role" style="width:100%;background:#0f172a;border:1.5px solid #334155;border-radius:9px;padding:10px;font-size:14px;color:#f1f5f9;font-family:inherit;outline:none;margin-bottom:8px;">
-        <option value="besteller">🛒 Besteller</option>
-        <option value="lager">📦 Lager</option>
-        <option value="admin">⚙️ Admin</option>
-      </select>
-      <button onclick="inviteUser()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:9px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;">✅ Hinzufügen</button>
-    </div>
-    <div id="pending-section" style="margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⏳ Wartend auf Freischaltung</div>
-      <div id="pending-list"></div>
-    </div>
-    <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">✅ Freigeschaltete Mitarbeiter</div>
-    <div id="users-list"></div>
-  </div>
-</div>
 </body>
 </html>
