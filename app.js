@@ -325,9 +325,27 @@
         approveBtn.className = 'btn btn-success btn-sm';
         approveBtn.textContent = '✅';
         approveBtn.onclick = async () => {
-          await Api.post('user_roles', { user_id: u.user_id, role: sel.value, email: u.email });
+          approveBtn.disabled = true;
+          approveBtn.textContent = '⏳';
+
+          // 1. Rolle in user_roles eintragen
+          const roleResult = await Api.post('user_roles', {
+            user_id: u.user_id,
+            role: sel.value,
+            email: u.email
+          });
+
+          if(!roleResult){
+            AppCore.Toast.error('Fehler beim Freischalten – Rolle konnte nicht gesetzt werden');
+            approveBtn.disabled = false;
+            approveBtn.textContent = '✅';
+            return;
+          }
+
+          // 2. Aus pending_users entfernen
           await Api.delete('pending_users', `?user_id=eq.${u.user_id}`);
-          AppCore.Toast.success(`${u.full_name||u.email} freigeschaltet`);
+
+          AppCore.Toast.success(`${u.full_name||u.email} freigeschaltet als ${sel.value}`);
           loadStaffInline();
         };
 
