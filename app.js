@@ -122,6 +122,11 @@
     $('admin-save-edit-btn').addEventListener('click', () => window.AdminActions.saveEdit());
     $('admin-cancel-edit-btn').addEventListener('click', () => window.AdminActions.closeEditForm());
 
+    // Staff Modal
+    $('staff-open-btn').addEventListener('click', () => window.Staff.open());
+    $('staff-close-btn').addEventListener('click', () => window.Staff.close());
+    $('staff-modal').addEventListener('click', e => { if(e.target.id === 'staff-modal') window.Staff.close(); });
+
     // Event-Delegation für dynamische Buttons (Artikel-Plus/Minus, Kontakt-Auswahl, etc.)
     document.body.addEventListener('click', handleDelegatedClicks);
   }
@@ -762,7 +767,7 @@
       const card = document.createElement('div');
       card.className = 'order-card';
 
-      // Header (clickable to expand)
+      // Header
       const head = document.createElement('div');
       head.className = 'order-head';
       head.dataset.action = 'order-expand';
@@ -779,15 +784,61 @@
       const body = document.createElement('div');
       body.className = 'order-body';
 
-      const itemsDiv = document.createElement('div');
-      itemsDiv.style.marginBottom = '8px';
-      order.items.forEach(i => {
-        const pill = document.createElement('span');
-        pill.className = 'item-pill';
-        pill.textContent = `${i.item}: ${i.qty} ${i.unit || ''}`;
-        itemsDiv.appendChild(pill);
-      });
-      body.appendChild(itemsDiv);
+      // Delivery-Details anzeigen wenn vorhanden
+      if(order.delivery && Array.isArray(order.delivery) && order.delivery.length){
+        const deliveryDiv = document.createElement('div');
+        deliveryDiv.style.cssText = 'margin-bottom:10px;';
+
+        const dlabel = document.createElement('div');
+        dlabel.style.cssText = 'font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;';
+        dlabel.textContent = 'Lieferung';
+        deliveryDiv.appendChild(dlabel);
+
+        order.delivery.forEach(d => {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;';
+
+          const icon = d.status === 'ok' ? '✅' : d.status === 'partial' ? '⚠️' : '❌';
+          const iconEl = document.createElement('span');
+          iconEl.style.cssText = 'width:20px;text-align:center;flex-shrink:0;';
+          iconEl.textContent = icon;
+
+          const nameEl = document.createElement('span');
+          nameEl.style.cssText = 'flex:1;color:var(--text-primary);font-weight:600;';
+          nameEl.textContent = d.item;
+
+          const qtyEl = document.createElement('span');
+          qtyEl.style.cssText = 'font-weight:800;flex-shrink:0;';
+          if(d.status === 'ok'){
+            qtyEl.style.color = 'var(--status-success)';
+            qtyEl.textContent = `${d.qty}/${d.qty}`;
+          } else if(d.status === 'partial'){
+            qtyEl.style.color = 'var(--status-warn)';
+            qtyEl.textContent = `${d.delivered}/${d.qty}`;
+          } else {
+            qtyEl.style.color = 'var(--status-error)';
+            qtyEl.textContent = `0/${d.qty}`;
+          }
+
+          row.appendChild(iconEl);
+          row.appendChild(nameEl);
+          row.appendChild(qtyEl);
+          deliveryDiv.appendChild(row);
+        });
+
+        body.appendChild(deliveryDiv);
+      } else {
+        // Normale Artikel-Pills wenn noch kein Delivery-Status
+        const itemsDiv = document.createElement('div');
+        itemsDiv.style.marginBottom = '8px';
+        order.items.forEach(i => {
+          const pill = document.createElement('span');
+          pill.className = 'item-pill';
+          pill.textContent = `${i.item}: ${i.qty} ${i.unit || ''}`;
+          itemsDiv.appendChild(pill);
+        });
+        body.appendChild(itemsDiv);
+      }
 
       if(order.note){
         const note = document.createElement('div');

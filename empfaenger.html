@@ -39,15 +39,42 @@ body{font-family:'Sora',sans-serif;background:#0f172a;min-height:100vh;color:#f1
 .info-val{font-size:14px;font-weight:700;color:#f1f5f9;}
 .items-card{background:#1e293b;border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid #334155;}
 .sec-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
-.item-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #334155;}
+.item-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #334155;flex-wrap:wrap;}
 .item-row:last-child{border-bottom:none;}
 .item-img{width:56px;height:56px;border-radius:12px;object-fit:cover;flex-shrink:0;}
 .item-ph{width:56px;height:56px;border-radius:12px;background:#334155;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
-.item-name{flex:1;font-size:14px;font-weight:700;color:#f1f5f9;}
-.item-unit{font-size:11px;color:#64748b;margin-top:2px;}
-.item-qty{font-size:15px;font-weight:800;color:white;background:#16a34a;padding:6px 14px;border-radius:10px;white-space:nowrap;}
-.item-delivered{width:52px;border:1.5px solid #334155;border-radius:8px;padding:5px;font-size:14px;font-weight:800;text-align:center;font-family:inherit;background:#0f172a;color:#f1f5f9;outline:none;}
-.item-delivered.short{border-color:#dc2626;color:#f87171;}
+.item-name{font-size:14px;font-weight:700;color:#f1f5f9;}
+.item-qty-big{font-size:22px;font-weight:800;color:#f1f5f9;margin-top:3px;line-height:1;}
+.item-qty-unit{font-size:11px;color:#64748b;font-weight:400;margin-left:3px;}
+.del-btns{display:flex;gap:5px;flex-shrink:0;}
+.del-btn{
+  height:34px;padding:0 12px;
+  border-radius:8px;border:1.5px solid #334155;
+  background:#1e293b;cursor:pointer;
+  font-family:inherit;color:#64748b;
+  font-size:11px;font-weight:800;
+  letter-spacing:0.5px;text-transform:uppercase;
+  transition:all 0.15s;
+}
+.del-btn.active-ok      {background:#16a34a;border-color:#16a34a;color:white;}
+.del-btn.active-partial {background:#f59e0b;border-color:#f59e0b;color:white;}
+.del-btn.active-missing {background:#dc2626;border-color:#dc2626;color:white;}
+.partial-wrap{
+  width:100%;margin-top:8px;
+  background:#1e293b;border-radius:10px;padding:10px 12px;
+  border:1.5px solid #f59e0b;
+  display:none;align-items:center;gap:8px;
+  font-size:12px;color:#fcd34d;font-weight:700;
+}
+.partial-inp{
+  width:52px;background:#0f172a;border:1.5px solid #f59e0b;
+  border-radius:8px;padding:6px;font-size:15px;font-weight:800;
+  text-align:center;color:#f1f5f9;font-family:inherit;outline:none;
+}
+.status-pill{font-size:10px;font-weight:800;padding:3px 8px;border-radius:10px;display:inline-block;margin-top:4px;}
+.s-ok      {background:rgba(22,163,74,0.2);color:#4ade80;}
+.s-partial {background:rgba(245,158,11,0.2);color:#fcd34d;}
+.s-missing {background:rgba(220,38,38,0.2);color:#f87171;}
 .action-btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-transit{background:#2563eb;color:white;}
 .btn-missing{background:#dc2626;color:white;}
@@ -208,61 +235,30 @@ function showDetail(id){
   document.getElementById('filter-bar').style.display='none';
   document.getElementById('refresh-btn').style.display='none';
 
-  const sl={offen:'⏳ Offen',bestaetigt:'✅ Bestätigt',unterwegs:'🚗 Unterwegs',angekommen:'✅ Erledigt',fehler:'⚠️ Fehlt'}[o.status]||'Offen';
+  const sl={offen:'⏳ Offen',bestaetigt:'Bestätigt',unterwegs:'Unterwegs',angekommen:'Angekommen',fehler:'Teilweise'}[o.status]||'Offen';
   const sc={offen:'b-offen',bestaetigt:'b-ok',unterwegs:'b-ok',angekommen:'b-done',fehler:'b-offen'}[o.status]||'b-offen';
-  const typeLabel=o.type==='lager'?'🏠 Landside → Lager 📦':'✈️ Airside → Lager 📦';
-
-  // Group items by lager section
-  const grouped={};
-  o.items.forEach(i=>{
-    // Use section from order item directly, fallback to sectionMap
-    const section=i.section||sectionMap[(i.item||i.name).trim()]||'';
-    let groupKey='trocken';
-    if(section){
-      if(section.includes('TK')) groupKey='tk';
-      else if(section.includes('hlhaus')||section.includes('Getränke')||section.includes('getränke')) groupKey='kuehl';
-      else if(section.includes('Trockenlager')||section.includes('Kaffee')||section.includes('Hygiene')) groupKey='trocken';
-    }
-    if(!grouped[groupKey]) grouped[groupKey]=[];
-    grouped[groupKey].push(i);
-  });
-
-  let items='';
-  ['tk','kuehl','trocken'].forEach(gkey=>{
-    const gItems=grouped[gkey];
-    if(!gItems||!gItems.length) return;
-    const group=LAGER_GROUPS[gkey];
-    items+=`<div style="background:${group.color};border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;font-weight:800;color:white;">${group.label}</div>`;
-    items+=gItems.map(i=>{
-      const img=getImg(i.item||i.name);
-      const imgHtml=img?`<img class="item-img" src="${img}" onerror="this.outerHTML='<div class=item-ph>🖼️</div>'">`:'<div class="item-ph">🖼️</div>';
-      const key=(i.item||i.name).replace(/[^a-z0-9]/gi,'_');
-      return `<div class="item-row">
-        ${imgHtml}
-        <div style="flex:1;min-width:0;">
-          <div class="item-name">${i.item||i.name}</div>
-          <div class="item-unit">${i.unit||''}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
-          <span class="item-qty">${i.qty}</span>
-          <input class="item-delivered" type="tel" inputmode="numeric" id="del-${key}" 
-            value="${i.qty}" 
-            onchange="checkDelivered('${key}','${i.qty}')"
-            style="width:52px;"/>
-          <div style="font-size:10px;color:#64748b;">geliefert</div>
-        </div>
-      </div>`;
-    }).join('');
-  });
-
+  const typeLabel=o.type==='lager'?'Landside → Lager':'Airside → Lager';
   const isDone=['angekommen','fehler'].includes(o.status);
-  let actions='';
-  if(!isDone){
-    actions=`<button class="action-btn btn-transit" onclick="sendDelivery(${o.id})">🚗 Unterwegs → Abgeschlossen</button>`;
-  } else {
-    actions='<div style="text-align:center;padding:12px;color:#64748b;font-size:13px;">✅ Bestellung abgeschlossen</div>';
+
+  // Bestehende delivery-Daten laden falls vorhanden
+  const deliveryMap={};
+  if(o.delivery&&Array.isArray(o.delivery)){
+    o.delivery.forEach(d=>{ deliveryMap[d.item]=d; });
   }
 
+  // Gruppe Items
+  const grouped={};
+  o.items.forEach(i=>{
+    const section=i.section||sectionMap[(i.item||i.name).trim()]||'';
+    let gk='trocken';
+    if(section.includes('TK')) gk='tk';
+    else if(section.includes('hlhaus')||section.includes('Getränke')) gk='kuehl';
+    if(!grouped[gk]) grouped[gk]=[];
+    grouped[gk].push(i);
+  });
+
+  // Items HTML bauen
+  const wrap=document.getElementById('main-wrap');
   document.getElementById('main-header').innerHTML=`
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="back-btn" onclick="renderList()">←</button>
@@ -272,30 +268,202 @@ function showDetail(id){
       </div>
     </div>`;
 
-  document.getElementById('main-wrap').innerHTML=`<div class="wrap">
-    <div class="info-card">
-      <div class="info-row"><span class="info-label">📍 Typ:</span><span class="info-val">${typeLabel}</span></div>
-      ${o.note?`<div class="note-box">📝 ${o.note}</div>`:''}
-    </div>
-    <div class="items-card">
-      <div class="sec-title">Artikel (${o.items.length})</div>
-      ${items}
-    </div>
-    ${actions}
-  </div>`;
+  const bodyEl=document.createElement('div');
+  bodyEl.className='wrap';
+
+  // Info
+  const infoCard=document.createElement('div');
+  infoCard.className='info-card';
+  infoCard.innerHTML=`<div class="info-row"><span class="info-label">Typ</span><span class="info-val">${typeLabel}</span></div>`;
+  if(o.note) infoCard.innerHTML+=`<div class="note-box">📝 ${o.note}</div>`;
+  bodyEl.appendChild(infoCard);
+
+  // Items Card
+  const itemsCard=document.createElement('div');
+  itemsCard.className='items-card';
+  itemsCard.innerHTML=`<div class="sec-title">Artikel (${o.items.length}) ${isDone?'':'– Status pro Artikel setzen'}</div>`;
+
+  ['tk','kuehl','trocken'].forEach(gk=>{
+    const gItems=grouped[gk];
+    if(!gItems||!gItems.length) return;
+    const group=LAGER_GROUPS[gk];
+    const gHead=document.createElement('div');
+    gHead.style.cssText=`background:${group.color};border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;font-weight:800;color:white;`;
+    gHead.textContent=group.label;
+    itemsCard.appendChild(gHead);
+
+    gItems.forEach(i=>{
+      const name=i.item||i.name;
+      const existing=deliveryMap[name];
+      const row=document.createElement('div');
+      row.className='item-row';
+      row.dataset.item=name;
+      row.dataset.qty=i.qty;
+
+      // Bild
+      const img=getImg(name);
+      const imgEl=document.createElement(img?'img':'div');
+      if(img){ imgEl.className='item-img'; imgEl.src=img; imgEl.onerror=function(){this.outerHTML='<div class="item-ph">🖼️</div>';}; }
+      else { imgEl.className='item-ph'; imgEl.textContent='🖼️'; }
+      row.appendChild(imgEl);
+
+      // Info
+      const info=document.createElement('div');
+      info.style.flex='1';
+      const nameEl=document.createElement('div');
+      nameEl.className='item-name';
+      nameEl.textContent=name;
+      const qtyEl=document.createElement('div');
+      qtyEl.innerHTML=`<span class="item-qty-big">${i.qty}</span><span class="item-qty-unit">${i.unit||''}</span>`;
+      info.appendChild(nameEl);
+      info.appendChild(qtyEl);
+
+      // Status Badge (falls schon gesetzt)
+      if(existing){
+        const pill=document.createElement('span');
+        pill.className='status-pill s-'+existing.status;
+        const labels={ok:'Angekommen',partial:`Nur ${existing.delivered}/${i.qty}`,missing:'Fehlt'};
+        pill.textContent=labels[existing.status]||existing.status;
+        info.appendChild(pill);
+      }
+      row.appendChild(info);
+
+      // Buttons oder readonly
+      if(!isDone){
+        const btns=document.createElement('div');
+        btns.className='del-btns';
+
+        ['ok','partial','missing'].forEach(type=>{
+          const btn=document.createElement('button');
+          btn.className='del-btn'+(existing&&existing.status===type?' active-'+type:'');
+          btn.textContent={ok:'OK',partial:'Teil',missing:'Fehlt'}[type];
+          btn.onclick=()=>handleDelBtn(btn,type,row,name,i.qty);
+          btns.appendChild(btn);
+        });
+        row.appendChild(btns);
+
+        // Teilweise Input
+        const partialWrap=document.createElement('div');
+        partialWrap.className='partial-wrap';
+        partialWrap.id='partial-'+name.replace(/[^a-z0-9]/gi,'_');
+        partialWrap.innerHTML=`<span>Nur</span><input class="partial-inp" type="tel" inputmode="numeric" value="${existing&&existing.status==='partial'?existing.delivered:''}" placeholder="0"/><span>von ${i.qty} da</span>`;
+        if(existing&&existing.status==='partial') partialWrap.style.display='flex';
+        row.appendChild(partialWrap);
+      }
+
+      itemsCard.appendChild(row);
+    });
+  });
+
+  bodyEl.appendChild(itemsCard);
+
+  // Action Buttons
+  if(!isDone){
+    const transitBtn=document.createElement('button');
+    transitBtn.className='action-btn btn-transit';
+    transitBtn.id='transit-btn';
+    transitBtn.textContent='Unterwegs';
+    transitBtn.onclick=()=>setUnterwegs(o.id);
+    bodyEl.appendChild(transitBtn);
+
+    const doneBtn=document.createElement('button');
+    doneBtn.className='action-btn';
+    doneBtn.id='done-btn';
+    doneBtn.style.cssText='background:#16a34a;color:white;';
+    doneBtn.textContent='Angekommen – Abschliessen';
+    doneBtn.onclick=()=>abschliessen(o.id);
+    bodyEl.appendChild(doneBtn);
+
+    const hint=document.createElement('div');
+    hint.style.cssText='text-align:center;font-size:11px;color:#475569;padding-bottom:8px;';
+    hint.textContent='Status pro Artikel setzen, dann Unterwegs oder Abschliessen tippen';
+    bodyEl.appendChild(hint);
+  } else {
+    const done=document.createElement('div');
+    done.style.cssText='text-align:center;padding:14px;color:#64748b;font-size:13px;';
+    done.textContent='Bestellung abgeschlossen';
+    bodyEl.appendChild(done);
+  }
+
+  wrap.innerHTML='';
+  wrap.appendChild(bodyEl);
+}
+
+function handleDelBtn(btn, type, row, itemName, qty){
+  // Alle Buttons in dieser Zeile zurücksetzen
+  row.querySelectorAll('.del-btn').forEach(b=>{
+    b.classList.remove('active-ok','active-partial','active-missing');
+  });
+  btn.classList.add('active-'+type);
+
+  // Teilweise Input ein/ausblenden
+  const pid='partial-'+itemName.replace(/[^a-z0-9]/gi,'_');
+  const pw=document.getElementById(pid);
+  if(pw) pw.style.display=type==='partial'?'flex':'none';
+  if(type==='partial'&&pw) pw.querySelector('input').focus();
+}
+
+function collectDeliveryData(orderId){
+  const o=allOrders.find(x=>x.id===orderId);
+  if(!o) return null;
+  const result=[];
+  let allSet=true;
+
+  o.items.forEach(i=>{
+    const name=i.item||i.name;
+    const row=document.querySelector(`.item-row[data-item="${CSS.escape(name)}"]`);
+    if(!row){ result.push({item:name,qty:parseInt(i.qty),delivered:parseInt(i.qty),status:'ok'}); return; }
+
+    const activeBtn=row.querySelector('.del-btn[class*="active-"]');
+    if(!activeBtn){ allSet=false; return; }
+
+    const type=activeBtn.classList.contains('active-ok')?'ok':activeBtn.classList.contains('active-partial')?'partial':'missing';
+    let delivered=parseInt(i.qty);
+
+    if(type==='partial'){
+      const pid='partial-'+name.replace(/[^a-z0-9]/gi,'_');
+      const pw=document.getElementById(pid);
+      const val=parseInt(pw?.querySelector('input')?.value||0);
+      delivered=Math.min(val,parseInt(i.qty));
+    } else if(type==='missing'){
+      delivered=0;
+    }
+
+    result.push({item:name,qty:parseInt(i.qty),delivered,status:type,unit:i.unit||''});
+  });
+
+  return {data:result,allSet};
+}
+
+async function setUnterwegs(orderId){
+  const {data,allSet}=collectDeliveryData(orderId)||{};
+  const now=new Date().toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  await api('PATCH','orders',`?id=eq.${orderId}`,{status:'unterwegs',status_time:now,delivery:data||null});
+  const idx=allOrders.findIndex(o=>o.id===orderId);
+  if(idx>=0){allOrders[idx].status='unterwegs';if(data) allOrders[idx].delivery=data;}
+  renderList();
+}
+
+async function abschliessen(orderId){
+  const {data}=collectDeliveryData(orderId)||{data:[]};
+  const hasMissing=data.some(d=>d.status==='missing'||d.status==='partial');
+  const status=hasMissing?'fehler':'angekommen';
+  const now=new Date().toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  await api('PATCH','orders',`?id=eq.${orderId}`,{status,status_time:now,delivery:data});
+  const idx=allOrders.findIndex(o=>o.id===orderId);
+  if(idx>=0){allOrders[idx].status=status;allOrders[idx].delivery=data;}
+  currentFilter='done';
+  ['all','lager','airside','done'].forEach(k=>{
+    document.getElementById('f-'+k)?.classList.toggle('on',k==='done');
+  });
+  renderList();
 }
 
 async function updateStatus(id,status){
-  const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  await api("PATCH","orders",`?id=eq.${id}`,{status,status_time:now});
+  const now=new Date().toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  await api('PATCH','orders',`?id=eq.${id}`,{status,status_time:now});
   const idx=allOrders.findIndex(o=>o.id===id);
   if(idx>=0) allOrders[idx].status=status;
-  if(status==='angekommen'||status==='fehler'){
-    currentFilter='done';
-    ['all','lager','airside','done'].forEach(k=>{
-      document.getElementById('f-'+k)?.classList.toggle('on',k==='done');
-    });
-  }
   renderList();
 }
 
@@ -309,58 +477,9 @@ window.addEventListener('DOMContentLoaded',function(){
 });
 setInterval(updateTimers,30000);
 setInterval(async()=>{
-  const data=await api("GET","orders","?type=in.(lager,airside_lager)&order=created_at.desc");
+  const data=await api('GET','orders','?type=in.(lager,airside_lager)&order=created_at.desc');
   if(data) allOrders=data;
 },30000);
-
-function checkDelivered(key, ordered){
-  const inp=document.getElementById('del-'+key);
-  if(!inp) return;
-  const delivered=parseInt(inp.value)||0;
-  const orderedNum=parseInt(ordered)||0;
-  if(delivered < orderedNum){
-    inp.classList.add('short');
-  } else {
-    inp.classList.remove('short');
-    if(delivered > orderedNum) inp.value=orderedNum;
-  }
-}
-
-async function sendDelivery(orderId){
-  const o=allOrders.find(x=>x.id===orderId);
-  if(!o) return;
-  
-  const missing=[];
-  o.items.forEach(i=>{
-    const key=(i.item||i.name).replace(/[^a-z0-9]/gi,'_');
-    const inp=document.getElementById('del-'+key);
-    const delivered=parseInt(inp?.value)||parseInt(i.qty);
-    const ordered=parseInt(i.qty);
-    if(delivered < ordered){
-      missing.push({name:i.item||i.name, ordered, delivered, diff:ordered-delivered, unit:i.unit||''});
-    }
-  });
-  
-  const now=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  const status=missing.length?'fehler':'angekommen';
-  
-  await api("PATCH","orders",`?id=eq.${orderId}`,{status,status_time:now});
-  const idx=allOrders.findIndex(x=>x.id===orderId);
-  if(idx>=0) allOrders[idx].status=status;
-  
-  if(missing.length){
-    let msg=`⚠️ *FEHLMELDUNG*\n━━━━━━━━━━━━━━━━━━━━\n👤 ${o.orderer}\n📅 ${now}\n━━━━━━━━━━━━━━━━━━━━\n\nFolgendes fehlt:\n`;
-    missing.forEach(m=>msg+=`❌ ${m.name}: bestellt ${m.ordered}, geliefert ${m.delivered} (-${m.diff} ${m.unit})\n`);
-    const contacts=o.contacts||[];
-    contacts.forEach((c,i)=>setTimeout(()=>window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`,'_blank'),i*800));
-  }
-  
-  currentFilter='done';
-  ['all','lager','airside','done'].forEach(k=>{
-    document.getElementById('f-'+k)?.classList.toggle('on',k==='done');
-  });
-  renderList();
-}
 
 // Section grouping for display
 const LAGER_GROUPS = {

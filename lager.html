@@ -493,7 +493,7 @@ textarea { min-height: 70px; resize: vertical; }
    ═════════════════════════════════════════════════════════════════ */
 .fab {
   position: fixed;
-  bottom: 90px;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   right: 16px;
   width: 48px; height: 48px;
   border-radius: 50%;
@@ -510,7 +510,7 @@ textarea { min-height: 70px; resize: vertical; }
 .fab:active { opacity: 0.85; }
 .dark-btn {
   position: fixed;
-  bottom: 90px;
+  bottom: calc(80px + env(safe-area-inset-bottom, 0px));
   left: 16px;
   width: 48px; height: 48px;
   border-radius: 50%;
@@ -638,6 +638,57 @@ textarea { min-height: 70px; resize: vertical; }
   border-radius: var(--r-md);
 }
 
+
+/* ═════════════════════════════════════════════════════════════════
+   STAFF MANAGEMENT
+   ═════════════════════════════════════════════════════════════════ */
+.staff-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.staff-row:last-child { border-bottom: none; }
+.staff-row.staff-pending { background: var(--tint-warn); border-radius: var(--r-md); padding: 12px; margin-bottom: 6px; border: none; }
+
+.staff-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; flex-shrink: 0;
+}
+.staff-avatar.pending { background: var(--status-warn); color: white; }
+.staff-avatar.active  { background: var(--brand-secondary); color: white; }
+
+.staff-info { flex: 1; min-width: 0; }
+.staff-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.staff-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+.staff-role-select {
+  font-size: 12px; padding: 5px 8px;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit; font-weight: 700;
+  flex-shrink: 0; width: 110px;
+}
+
+.staff-btns { display: flex; gap: 4px; flex-shrink: 0; }
+
+.role-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: var(--r-pill);
+  margin-top: 3px;
+}
+
+.pending-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--status-error); color: white;
+  font-size: 10px; font-weight: 800;
+  min-width: 18px; height: 18px;
+  border-radius: 999px; padding: 0 4px;
+  margin-left: 4px; vertical-align: middle;
+}
 /* ═════════════════════════════════════════════════════════════════
    OFFLINE BAR
    ═════════════════════════════════════════════════════════════════ */
@@ -694,7 +745,7 @@ textarea { min-height: 70px; resize: vertical; }
   <nav class="tabs">
     <button class="tab on" id="tab-order"   data-tab="order">🛒 Bestellen</button>
     <button class="tab"    id="tab-history" data-tab="history">📋 Verlauf</button>
-    <button class="tab"    id="tab-stats"   data-tab="stats" style="display:none;">📊 Statistik</button>
+    <button class="tab"    id="tab-stats" data-tab="stats" style="display:none;flex:1;">📊 Statistik</button>
   </nav>
 
   <!-- ─── Page: Order ─── -->
@@ -779,7 +830,7 @@ textarea { min-height: 70px; resize: vertical; }
   </div>
 
   <!-- Cart Modal -->
-  <div class="modal-overlay" id="cart-modal">
+  <div class="modal-overlay" id="cart-modal" style="cursor:pointer;">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -805,7 +856,10 @@ textarea { min-height: 70px; resize: vertical; }
     <div class="admin-header">
       <div class="admin-header-title">⚙️ Artikel verwalten</div>
       <div style="display:flex;gap:6px;">
-        <button class="btn btn-warning btn-sm" onclick="window.PdfExport.open()">📄 PDF Export</button>
+        <button class="btn btn-secondary btn-sm" id="staff-open-btn">
+          👥<span class="pending-badge" id="staff-pending-badge" style="display:none;"></span>
+        </button>
+        <button class="btn btn-warning btn-sm" onclick="window.PdfExport.open()">📄 PDF</button>
         <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕</button>
       </div>
     </div>
@@ -855,6 +909,93 @@ textarea { min-height: 70px; resize: vertical; }
 </div>
 
 <!-- ═════════════════════════════════════════════════════════════════
+     PDF EXPORT MODAL
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="pdf-modal">
+  <div class="modal-sheet" style="max-height:80vh;">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-size:18px;font-weight:800;">📄 Bestellbericht exportieren</div>
+      <button class="btn btn-secondary btn-icon" onclick="window.PdfExport.close()">✕</button>
+    </div>
+
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">
+      Zeitraum wählen → PDF wird in neuem Tab geöffnet → Drucken oder als PDF speichern
+    </div>
+
+    <!-- Schnell-Buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-secondary" onclick="window.PdfExport.generate('day')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+        <span style="font-size:18px;">📅</span>
+        <span style="font-size:12px;font-weight:700;">Heute</span>
+      </button>
+      <button class="btn btn-secondary" onclick="window.PdfExport.generate('week')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+        <span style="font-size:18px;">📅</span>
+        <span style="font-size:12px;font-weight:700;">Letzte 7 Tage</span>
+      </button>
+      <button class="btn btn-secondary" onclick="window.PdfExport.generate('month')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+        <span style="font-size:18px;">📅</span>
+        <span style="font-size:12px;font-weight:700;">Dieser Monat</span>
+      </button>
+      <button class="btn btn-secondary" onclick="window.PdfExport.generate('year')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;">
+        <span style="font-size:18px;">📅</span>
+        <span style="font-size:12px;font-weight:700;">Dieses Jahr</span>
+      </button>
+    </div>
+
+    <!-- Custom Zeitraum -->
+    <div style="background:var(--bg-soft);border-radius:var(--r-md);padding:14px;border:1.5px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:10px;">📆 Eigener Zeitraum</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Von</div>
+          <input type="date" id="pdf-custom-from" style="font-size:13px;padding:8px 10px;"/>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Bis</div>
+          <input type="date" id="pdf-custom-to" style="font-size:13px;padding:8px 10px;"/>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" id="pdf-gen-btn" onclick="window.PdfExport.generate('custom')">
+        📄 PDF erstellen
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
+     STAFF MODAL – Mitarbeiter-Verwaltung
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="admin-modal" id="staff-modal">
+  <div class="admin-sheet">
+
+    <!-- Header -->
+    <div class="admin-header">
+      <div class="admin-header-title">👥 Mitarbeiter</div>
+      <button class="btn btn-secondary btn-sm" id="staff-close-btn">✕</button>
+    </div>
+
+    <!-- Ausstehend -->
+    <div class="admin-section">
+      <div class="admin-section-title" id="staff-pending-header">⏳ Ausstehend</div>
+      <div id="staff-pending-list">
+        <div class="admin-skeleton" style="height:64px;margin-bottom:8px;"></div>
+      </div>
+    </div>
+
+    <!-- Aktive Mitarbeiter -->
+    <div class="admin-section">
+      <div class="admin-section-title" id="staff-active-header">👥 Aktive Mitarbeiter</div>
+      <div id="staff-active-list">
+        <div class="admin-skeleton" style="height:64px;margin-bottom:8px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
      SCRIPTS – Reihenfolge wichtig!
      1. config.js   – Konstanten
      2. app-core.js – Fundament (Auth, API, State, Toast)
@@ -865,6 +1006,7 @@ textarea { min-height: 70px; resize: vertical; }
 <script src="app-core.js"></script>
 <script src="admin.js"></script>
 <script src="pdf-export.js"></script>
+<script src="staff.js"></script>
 <script src="app.js"></script>
 
 </body>
