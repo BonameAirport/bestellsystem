@@ -122,8 +122,7 @@
     $('admin-save-edit-btn').addEventListener('click', () => window.AdminActions.saveEdit());
     $('admin-cancel-edit-btn').addEventListener('click', () => window.AdminActions.closeEditForm());
 
-    // Staff Modal
-    $('staff-open-btn').addEventListener('click', () => window.Staff.open());
+    // Staff Modal (noch vorhanden für direkten Aufruf)
     $('staff-close-btn').addEventListener('click', () => window.Staff.close());
     $('staff-modal').addEventListener('click', e => { if(e.target.id === 'staff-modal') window.Staff.close(); });
 
@@ -201,6 +200,16 @@
 
   async function onLoginSuccess(){
     hideLogin();
+    // ← DAS war der Bug: isAuthenticated wurde beim Reload nie gesetzt
+    const token = Auth.getToken();
+    if(token){
+      const payload = Auth.decodeToken(token);
+      setState({
+        isAuthenticated: true,
+        user: payload ? { id: payload.sub, email: payload.email } : null,
+      });
+    }
+    await Auth.checkAdminStatus();
     Toast.success('Willkommen!');
     await loadAppData();
   }
@@ -232,10 +241,16 @@
     renderContacts();
     renderArticles();
 
-    // Admin-spezifische UI freischalten
+    // Stats-Tab nur für Admins – NACH dem Admin-Check aus onLoginSuccess
     const { isAdmin } = getState();
     if(isAdmin){
-      $('tab-stats').style.display = 'flex';
+      // Alle Admin-Tabs einblenden
+      document.querySelectorAll('.admin-tab').forEach(t => {
+        t.style.display = 'flex';
+      });
+      // PDF Export Button im Verlauf einblenden
+      const pdfBar = $('pdf-export-bar');
+      if(pdfBar) pdfBar.style.display = 'block';
     }
   }
 
@@ -249,8 +264,143 @@
     $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === tab));
     $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + tab));
 
-    if(tab === 'history') loadOrders();
-    if(tab === 'stats') loadStats();
+    if(tab === 'history')  loadOrders();
+    if(tab === 'stats')    loadStats();
+    if(tab === 'staff')    loadStaffInline();
+  }
+
+  async function loadStaffInline(){
+    if(!getState().isAdmin) return;
+    const el = $('staff-inline-list');
+    if(!el) return;
+    el.innerHTML = `<div class="empty-state"><div class="icon">⏳</div><div class="title">Lädt...</div></div>`;
+
+    const [pending, roles] = await Promise.all([
+      Api.get('pending_users', '?order=created_at.desc'),
+      Api.get('user_roles',    '?order=created_at.asc'),
+    ]);
+
+    const approvedIds = new Set((roles||[]).map(r => r.user_id));
+    const pendingFiltered = (pending||[]).filter(u => !approvedIds.has(u.user_id));
+    const activeFiltered  = (roles||[]).filter(u => u.user_id !== AppCore.config.OWNER_ID);
+
+    el.innerHTML = '';
+
+    // Ausstehend
+    const pendingSection = document.createElement('div');
+    pendingSection.className = 'card';
+    const pTitle = document.createElement('div');
+    pTitle.className = 'lbl';
+    pTitle.style.color = pendingFiltered.length ? 'var(--status-warn)' : 'var(--text-secondary)';
+    pTitle.textContent = `⏳ Ausstehend (${pendingFiltered.length})`;
+    pendingSection.appendChild(pTitle);
+
+    if(!pendingFiltered.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px;color:var(--text-muted);padding:8px 0;';
+      empty.textContent = '✅ Keine ausstehenden Anfragen';
+      pendingSection.appendChild(empty);
+    } else {
+      pendingFiltered.forEach(u => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+
+        const avatar = document.createElement('div');
+        avatar.style.cssText = 'width:36px;height:36px;border-radius:50%;background:var(--status-warn);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;';
+        avatar.textContent = (u.full_name||u.email||'?')[0].toUpperCase();
+
+        const info = document.createElement('div');
+        info.style.flex = '1';
+        info.innerHTML = `<div style="font-size:13px;font-weight:700;">${AppCore.escapeHTML(u.full_name||'–')}</div><div style="font-size:11px;color:var(--text-muted);">${AppCore.escapeHTML(u.email||'')}</div>`;
+
+        const sel = document.createElement('select');
+        sel.style.cssText = 'font-size:12px;padding:4px 6px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-family:inherit;';
+        [['airside','✈️ Airside'],['lager','📦 Lager'],['admin','🔴 Admin']].forEach(([v,l]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = l;
+          sel.appendChild(o);
+        });
+
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'btn btn-success btn-sm';
+        approveBtn.textContent = '✅';
+        approveBtn.onclick = async () => {
+          await Api.post('user_roles', { user_id: u.user_id, role: sel.value, email: u.email });
+          await Api.delete('pending_users', `?user_id=eq.${u.user_id}`);
+          AppCore.Toast.success(`${u.full_name||u.email} freigeschaltet`);
+          loadStaffInline();
+        };
+
+        const denyBtn = document.createElement('button');
+        denyBtn.className = 'btn btn-danger btn-sm';
+        denyBtn.textContent = '✕';
+        denyBtn.onclick = async () => {
+          await Api.delete('pending_users', `?user_id=eq.${u.user_id}`);
+          AppCore.Toast.info('Abgelehnt');
+          loadStaffInline();
+        };
+
+        const btns = document.createElement('div');
+        btns.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+        btns.appendChild(sel);
+        btns.appendChild(approveBtn);
+        btns.appendChild(denyBtn);
+
+        row.appendChild(avatar);
+        row.appendChild(info);
+        row.appendChild(btns);
+        pendingSection.appendChild(row);
+      });
+    }
+    el.appendChild(pendingSection);
+
+    // Aktive Mitarbeiter
+    const activeSection = document.createElement('div');
+    activeSection.className = 'card';
+    const aTitle = document.createElement('div');
+    aTitle.className = 'lbl';
+    aTitle.textContent = `👥 Aktive Mitarbeiter (${activeFiltered.length})`;
+    activeSection.appendChild(aTitle);
+
+    if(!activeFiltered.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px;color:var(--text-muted);padding:8px 0;';
+      empty.textContent = 'Noch keine Mitarbeiter freigeschaltet';
+      activeSection.appendChild(empty);
+    } else {
+      activeFiltered.forEach(u => {
+        const roleColors = { airside:'#dbeafe', lager:'#fef3c7', admin:'#fee2e2' };
+        const roleLabels = { airside:'✈️ Airside', lager:'📦 Lager', admin:'🔴 Admin' };
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);';
+
+        const avatar = document.createElement('div');
+        avatar.style.cssText = 'width:36px;height:36px;border-radius:50%;background:var(--brand-secondary);color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;';
+        avatar.textContent = (u.email||'?')[0].toUpperCase();
+
+        const info = document.createElement('div');
+        info.style.flex = '1';
+        const badge = `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${roleColors[u.role]||'#f1f5f9'};color:#374151;margin-top:3px;display:inline-block;">${roleLabels[u.role]||u.role}</span>`;
+        info.innerHTML = `<div style="font-size:13px;font-weight:700;">${AppCore.escapeHTML(u.email||u.user_id.substring(0,12)+'...')}</div>${badge}`;
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-danger btn-sm';
+        delBtn.textContent = '🚫';
+        delBtn.title = 'Sperren';
+        delBtn.onclick = async () => {
+          if(!confirm(`${u.email} sperren?`)) return;
+          await Api.delete('user_roles', `?id=eq.${u.id}`);
+          AppCore.Toast.success('Gesperrt');
+          loadStaffInline();
+        };
+
+        row.appendChild(avatar);
+        row.appendChild(info);
+        row.appendChild(delBtn);
+        activeSection.appendChild(row);
+      });
+    }
+    el.appendChild(activeSection);
   }
 
 
@@ -962,7 +1112,6 @@
     if(!isAdmin){ Toast.warning('Keine Admin-Rechte'); return; }
     window.Admin.open();
   }
-
 
   // ═══════════════════════════════════════════════════════════════
   //  STATE → UI SYNC

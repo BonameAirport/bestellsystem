@@ -181,6 +181,9 @@ input, textarea, select { font-family: inherit; }
   display: flex;
   background: var(--bg-card);
   border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
   position: sticky;
   top: var(--header-height, 88px); /* klebt direkt unter dem Header */
   z-index: 79;
@@ -744,10 +747,12 @@ textarea { min-height: 70px; resize: vertical; }
   <button class="fab" id="admin-btn" aria-label="Admin">⚙️</button>
 
   <!-- Tabs -->
-  <nav class="tabs">
-    <button class="tab on" id="tab-order"   data-tab="order">🛒 Bestellen</button>
-    <button class="tab"    id="tab-history" data-tab="history">📋 Verlauf</button>
-    <button class="tab"    id="tab-stats" data-tab="stats" style="display:none;flex:1;">📊 Statistik</button>
+  <nav class="tabs" id="main-tabs">
+    <button class="tab on" id="tab-order"      data-tab="order">🛒 Bestellen</button>
+    <button class="tab"    id="tab-history"    data-tab="history">📋 Verlauf</button>
+    <button class="tab admin-tab" id="tab-stats"      data-tab="stats"      style="display:none;">📊 Statistik</button>
+    <button class="tab admin-tab" id="tab-staff"      data-tab="staff"      style="display:none;">👥 Mitarbeiter</button>
+    <button class="tab admin-tab" id="tab-inventur"   data-tab="inventur"   style="display:none;">📦 Inventur</button>
   </nav>
 
   <!-- ─── Page: Order ─── -->
@@ -808,6 +813,12 @@ textarea { min-height: 70px; resize: vertical; }
   <!-- ─── Page: History ─── -->
   <section class="page" id="page-history">
     <div class="wrap">
+      <!-- PDF Export Button – nur für Admins sichtbar -->
+      <div id="pdf-export-bar" style="display:none;margin-bottom:12px;">
+        <button class="btn btn-warning btn-block" onclick="window.PdfExport.open()" style="font-size:13px;">
+          📄 PDF Export – Bestellbericht
+        </button>
+      </div>
       <div id="order-list">
         <div class="empty-state"><div class="icon">⏳</div><div class="title">Lädt...</div></div>
       </div>
@@ -820,6 +831,27 @@ textarea { min-height: 70px; resize: vertical; }
       <div id="stats-content">
         <div class="empty-state"><div class="icon">📊</div><div class="title">Statistik wird geladen...</div></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ─── Page: Staff (Admin) ─── -->
+  <section class="page" id="page-staff">
+    <div class="wrap" style="padding-top:8px;">
+      <div id="staff-inline-list">
+        <div class="empty-state"><div class="icon">👥</div><div class="title">Lädt...</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Page: Inventur (Admin) ─── -->
+  <section class="page" id="page-inventur">
+    <div class="wrap" style="padding-top:24px;text-align:center;">
+      <div style="font-size:64px;margin-bottom:16px;">📦</div>
+      <div style="font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:8px;">Inventur</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Die Inventur öffnet sich in einem separaten Tab.</div>
+      <a href="/inventur.html" target="_blank" class="btn btn-primary btn-block" style="font-size:15px;padding:14px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;">
+        📦 Inventur öffnen
+      </a>
     </div>
   </section>
 
@@ -857,13 +889,7 @@ textarea { min-height: 70px; resize: vertical; }
     <!-- Header -->
     <div class="admin-header">
       <div class="admin-header-title">⚙️ Artikel verwalten</div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-secondary btn-sm" id="staff-open-btn">
-          👥<span class="pending-badge" id="staff-pending-badge" style="display:none;"></span>
-        </button>
-        <button class="btn btn-warning btn-sm" onclick="window.PdfExport.open()">📄 PDF</button>
-        <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕</button>
-      </div>
+      <button class="btn btn-secondary btn-sm" id="admin-close-btn">✕</button>
     </div>
 
     <!-- ─── Neuen Artikel hinzufügen ─── -->
@@ -951,11 +977,11 @@ textarea { min-height: 70px; resize: vertical; }
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
         <div>
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Von</div>
-          <input type="date" id="pdf-custom-from" style="font-size:13px;padding:8px 10px;"/>
+          <input type="date" id="pdf-custom-from" style="font-size:16px;padding:8px 10px;"/>
         </div>
         <div>
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Bis</div>
-          <input type="date" id="pdf-custom-to" style="font-size:13px;padding:8px 10px;"/>
+          <input type="date" id="pdf-custom-to" style="font-size:16px;padding:8px 10px;"/>
         </div>
       </div>
       <button class="btn btn-primary btn-block" id="pdf-gen-btn" onclick="window.PdfExport.generate('custom')">
